@@ -87,6 +87,7 @@ This backend was built for educational purposes as part of Bloc 3 (Projet Final 
  📸 API Test Screenshots (Postman)
 
 Below are examples of API tests performed using Postman.
+### 👟 Athletes
 
 ###   (POST /api/athletes)
 
@@ -96,4 +97,18 @@ Below are examples of API tests performed using Postman.
 
 ###  Delete Athlete (DELETE /api/athletes/{id})
 
+###  Consultations
+- **POST /api/consultations**  
 
+- **PUT /api/consultations/{id}**  
+
+- **GET /api/consultations**  
+
+---
+
+###  Nutrition Entries
+- **POST /api/nutrition-entries**  
+
+- **GET /api/nutrition-entries**  
+
+- **DELETE /api/nutrition-entries/{id}**  
