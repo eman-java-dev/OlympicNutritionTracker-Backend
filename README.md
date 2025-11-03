@@ -97,16 +97,17 @@ Below are examples of API tests performed using Postman.
 
 ###  Delete Athlete (DELETE /api/athletes/{id})
 
-###  Consultations
+## Consultations
+
 - **POST /api/consultations**  
 
 - **PUT /api/consultations/{id}**  
 
 - **GET /api/consultations**  
 
----
 
-###  Nutrition Entries
+## Nutrition Entries
+
 - **POST /api/nutrition-entries**  
 
 - **GET /api/nutrition-entries**  
