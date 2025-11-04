@@ -9,9 +9,19 @@ public final class NutritionEntryMapper {
 
     private NutritionEntryMapper() {}
 
-    /** من Entity إلى Response */
+    public static NutritionEntry toEntity(NutritionEntryRequest req, Athlete athlete) {
+        NutritionEntry e = new NutritionEntry();
+        e.setDate(req.getDate());
+        e.setCalories(req.getCalories());
+        e.setProtein(req.getProtein());
+        e.setCarbs(req.getCarbs());
+        e.setFat(req.getFat());
+        e.setNotes(req.getNotes());
+        e.setAthlete(athlete);
+        return e;
+    }
+
     public static NutritionEntryResponse toResponse(NutritionEntry e) {
-        if (e == null) return null;
         NutritionEntryResponse r = new NutritionEntryResponse();
         r.setId(e.getId());
         r.setDate(e.getDate());
@@ -27,26 +37,13 @@ public final class NutritionEntryMapper {
         return r;
     }
 
-    /** من Request + Athlete إلى Entity (لإنشاء/تحديث) */
-    public static NutritionEntry toEntity(NutritionEntryRequest req, Athlete athlete) {
-        NutritionEntry e = new NutritionEntry();
-        e.setDate(req.getDate());
-        e.setCalories(req.getCalories());
-        e.setProtein(req.getProtein());
-        e.setCarbs(req.getCarbs());
-        e.setFat(req.getFat());
-        e.setNotes(req.getNotes());
-        e.setAthlete(athlete);
-        return e;
-    }
-
-    public static void copyForUpdate(NutritionEntryRequest req, NutritionEntry target, Athlete athlete) {
-        target.setDate(req.getDate());
-        target.setCalories(req.getCalories());
-        target.setProtein(req.getProtein());
-        target.setCarbs(req.getCarbs());
-        target.setFat(req.getFat());
-        target.setNotes(req.getNotes());
-        target.setAthlete(athlete);
+    public static void copyForUpdate(NutritionEntryRequest req, NutritionEntry existing, Athlete athlete) {
+        existing.setDate(req.getDate());
+        existing.setCalories(req.getCalories());
+        existing.setProtein(req.getProtein());
+        existing.setCarbs(req.getCarbs());
+        existing.setFat(req.getFat());
+        existing.setNotes(req.getNotes());
+        existing.setAthlete(athlete);
     }
 }

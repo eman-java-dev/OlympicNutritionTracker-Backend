@@ -30,32 +30,153 @@ The application manages athletes' profiles and their daily nutrition entries, in
 ## 🗂️ Project Structure
 
 
-└── main/
+
 └── java/com/eman/tracker/olympicnutritiontracker/
-├── Athlete.java
-├── AthleteController.java
-├── AthleteService.java
-├── AthleteRepository.java
-├── NutritionEntry.java
-├── NutritionEntryController.java
-├── NutritionEntryService.java
+├── model/
+│ ├── Athlete.java
+│ ├── Consultation.java
+│ ├── NutritionEntry.java
+├── controller/
+│ ├── AthleteController.java
+│ ├── ConsultationController.java
+│ ├── NutritionEntryController.java
+├── service/
+│ ├── AthleteService.java
+│ ├── ConsultationService.java
+│ ├── NutritionEntryService.java
+├── repository/
+│ ├── AthleteRepository.java
+│ ├── ConsultationRepository.java
+│ ├── NutritionEntryRepository.java
 ├── dto/
 ├── mapper/
 └── OlympicNutritionTrackerApplication.java
-
 ---
 
-##  API Endpoints
+
+
+## 🌐 API Endpoints
 
 | Method | Endpoint | Description |
 |---------|-----------|-------------|
-| `GET` | `/api/athletes` | Get all athletes |
-| `POST` | `/api/athletes` | Create new athlete |
-| `PUT` | `/api/athletes/{id}` | Update athlete by ID |
-| `DELETE` | `/api/athletes/{id}` | Delete athlete by ID |
-| `GET` | `/api/db-check` | Check database connection |
+| `GET` | `/api/athletes` | Retrieve all athletes |
+| `POST` | `/api/athletes` | Create a new athlete |
+| `PUT` | `/api/athletes/{id}` | Update an athlete |
+| `DELETE` | `/api/athletes/{id}` | Delete an athlete |
+| `GET` | `/api/consultations` | Retrieve all consultations |
+| `POST` | `/api/consultations` | Create a new consultation |
+| `PUT` | `/api/consultations/{id}` | Update a consultation |
+| `DELETE` | `/api/consultations/{id}` | Delete a consultation |
+| `GET` | `/api/nutrition-entries` | Retrieve all nutrition entries |
+| `POST` | `/api/nutrition-entries` | Create a nutrition entry |
+| `PUT` | `/api/nutrition-entries/{id}` | Update a nutrition entry |
+| `DELETE` | `/api/nutrition-entries/{id}` | Delete a nutrition entry |
+| `GET` | `/api/db-check` | Test database connection |
 
 ---
+---
+
+## 📊 Structure de la Base de Données (MySQL)
+
+Le projet **Olympic Nutrition Tracker** utilise une base de données relationnelle MySQL pour stocker les informations des athlètes, des consultations, et du suivi nutritionnel quotidien.  
+Chaque table est reliée par des clés étrangères pour assurer l’intégrité des données.
+
+---
+
+### 🧍 Table `athletes`
+Contient les informations de base sur les athlètes.
+
+| Champ | Type | Description |
+|--------|------|-------------|
+| `id` | BIGINT (PK) | Identifiant unique de l’athlète |
+| `name` | VARCHAR(100) | Nom complet de l’athlète |
+| `age` | INT | Âge de l’athlète |
+| `gender` | VARCHAR(10) | Sexe (`Homme` / `Femme`) |
+| `height` | DOUBLE | Taille en centimètres |
+| `weight` | DOUBLE | Poids en kilogrammes |
+| `bmi` | DOUBLE | Indice de masse corporelle (calculé automatiquement) |
+
+🔗 **Relations :**
+- Un `athlete` peut avoir plusieurs `nutrition_entries`
+- Un `athlete` peut être lié à plusieurs `consultations`
+
+---
+
+### 💬 Table `consultations`
+Enregistre les consultations entre les athlètes et leurs coachs.
+
+| Champ | Type | Description |
+|--------|------|-------------|
+| `id` | BIGINT (PK) | Identifiant unique de la consultation |
+| `message` | TEXT | Commentaire ou description de la séance |
+| `scheduled_at` | DATETIME | Date et heure de la consultation |
+| `athlete_id` | BIGINT (FK) | Référence vers l’athlète concerné |
+| `coach_id` | BIGINT (FK) | Référence vers le coach assigné |
+
+🔗 **Relations :**
+- Plusieurs `consultations` peuvent appartenir à un même `athlete`
+- Chaque `consultation` est liée à un seul `coach`
+
+---
+
+### 🥗 Table `nutrition_entries`
+Stocke les données alimentaires et nutritionnelles journalières.
+
+| Champ | Type | Description |
+|--------|------|-------------|
+| `id` | BIGINT (PK) | Identifiant unique de l’entrée |
+| `date` | DATE | Date du suivi alimentaire |
+| `calories` | INT | Apport calorique total de la journée |
+| `protein` | INT | Quantité de protéines (en grammes) |
+| `carbs` | INT | Quantité de glucides (en grammes) |
+| `fat` | INT | Quantité de lipides (en grammes) |
+| `notes` | TEXT | Notes ou observations du coach |
+| `athlete_id` | BIGINT (FK) | Référence vers l’athlète concerné |
+
+🔗 **Relations :**
+- Plusieurs entrées peuvent appartenir à un même `athlete`
+- L’entrée est supprimée automatiquement si l’athlète est supprimé (cascade)
+
+---
+
+### 🧠 Exemple de schéma simplifié :
+
+```mermaid
+erDiagram
+    ATHLETE {
+        BIGINT id
+        VARCHAR name
+        INT age
+        VARCHAR gender
+        DOUBLE height
+        DOUBLE weight
+        DOUBLE bmi
+    }
+
+    CONSULTATION {
+        BIGINT id
+        TEXT message
+        DATETIME scheduled_at
+        BIGINT athlete_id
+        BIGINT coach_id
+    }
+
+    NUTRITION_ENTRY {
+        BIGINT id
+        DATE date
+        INT calories
+        INT protein
+        INT carbs
+        INT fat
+        TEXT notes
+        BIGINT athlete_id
+    }
+
+    ATHLETE ||--o{ CONSULTATION : "possède"
+    ATHLETE ||--o{ NUTRITION_ENTRY : "enregistre"
+
+---
+
 
 ##  Author
 
@@ -84,6 +205,8 @@ This backend was built for educational purposes as part of Bloc 3 (Projet Final 
 
 ---
 
+
+
  📸 API Test Screenshots (Postman)
 
 Below are examples of API tests performed using Postman.
@@ -106,10 +229,71 @@ Below are examples of API tests performed using Postman.
 - **GET /api/consultations**  
 
 
-## Nutrition Entries
+## 🥗 Nutrition Entries (Suivi nutritionnel)
 
-- **POST /api/nutrition-entries**  
+> Toutes les requêtes Nutrition nécessitent une authentification **Basic Auth** (rôle : ADMIN ou COACH).
 
-- **GET /api/nutrition-entries**  
+---
 
-- **DELETE /api/nutrition-entries/{id}**  
+### 1️ GET — Récupérer toutes les entrées
+**GET** `/api/nutrition-entries`
+
+
+---
+
+### 2️ GET — Récupérer une entrée par ID
+**GET** `/api/nutrition-entries/{id}`  
+Exemple : `/api/nutrition-entries/1`
+
+
+---
+
+### 3️ GET — Récupérer les entrées par Athlète
+**GET** `/api/nutrition-entries?athleteId={athleteId}`  
+Exemple : `/api/nutrition-entries?athleteId=1`
+
+
+---
+
+### 4️ POST — Créer une nouvelle entrée
+**POST** `/api/nutrition-entries`  
+🧩 **Corps (JSON)** :
+```json
+{
+  "athleteId": 1,
+  "date": "2025-11-04",
+  "calories": 2200,
+  "protein": 120,
+  "carbs": 250,
+  "fat": 60,
+  "notes": "Création d'une nouvelle entrée via Postman"
+}
+
+--- 
+
+---
+
+### 5️ PUT — Mettre à jour une entrée
+**PUT** `/api/nutrition-entries/{id}`
+
+
+{
+  "athleteId": 1,
+  "date": "2025-11-04",
+  "calories": 2300,
+  "protein": 125,
+  "carbs": 255,
+  "fat": 62,
+  "notes": "Mise à jour après le déjeuner"
+}
+
+---
+### 6️ DELETE — Supprimer une entrée
+**DELETE** `/api/nutrition-entries/{id}`
+
+
+---
+
+🧩 Note
+
+This backend was built for educational purposes as part of Bloc 3 – Projet Final (Java Spring Boot) at Studi

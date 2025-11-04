@@ -2,7 +2,6 @@ package com.eman.tracker.olympicnutritiontracker.dto;
 
 import java.time.LocalDate;
 
-/** طلب الإنشاء/التحديث لعنصر تغذية */
 public class NutritionEntryRequest {
     private LocalDate date;     // yyyy-MM-dd
     private Integer calories;
@@ -10,7 +9,7 @@ public class NutritionEntryRequest {
     private Integer carbs;
     private Integer fat;
     private String notes;
-    private Long athleteId;     // المرجع إلى اللاعب
+    private Long athleteId;
 
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }

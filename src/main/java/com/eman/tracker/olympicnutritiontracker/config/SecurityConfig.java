@@ -28,11 +28,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT,  "/api/**").hasAnyRole("ADMIN","COACH")
                         .requestMatchers(HttpMethod.DELETE,"/api/**").hasAnyRole("ADMIN","COACH")
 
-                        // الباقي لازم يكون مصرح له
                         .anyRequest().authenticated()
                 )
 
-                // مصادقة بسيطة Basic لتجربة الـ API
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
