@@ -1,22 +1,21 @@
-#  Olympic Nutrition Tracker
+# 🏋️‍♀️ Olympic Nutrition Tracker
 
-This is a **Spring Boot REST API** developed for the *Olympic Nutrition Tracker* project as part of **Bloc 3 – Studi 2025**.
-
+This is a **Spring Boot REST API** developed for the *Olympic Nutrition Tracker* project as part of **Bloc 3 – Studi 2025**.  
 The application manages athletes' profiles and their daily nutrition entries, including BMI calculation and meal tracking.
 
 ---
 
-##  Features
+## 🚀 Features
 
-- Create, read, update and delete (CRUD) athletes  
-- Record and track daily nutrition entries  
-- Automatic BMI calculation  
-- MySQL database integration  
-- Tested using Postman  
+- Create, read, update and delete (CRUD) athletes
+- Record and track daily nutrition entries
+- Automatic BMI calculation
+- MySQL database integration
+- Tested using Postman
 
 ---
 
-##  Technologies Used
+## 🛠️ Technologies Used
 
 - **Java 21**
 - **Spring Boot 3**
@@ -29,31 +28,30 @@ The application manages athletes' profiles and their daily nutrition entries, in
 
 ## 🗂️ Project Structure
 
-
-
+```
 └── java/com/eman/tracker/olympicnutritiontracker/
-├── model/
-│ ├── Athlete.java
-│ ├── Consultation.java
-│ ├── NutritionEntry.java
-├── controller/
-│ ├── AthleteController.java
-│ ├── ConsultationController.java
-│ ├── NutritionEntryController.java
-├── service/
-│ ├── AthleteService.java
-│ ├── ConsultationService.java
-│ ├── NutritionEntryService.java
-├── repository/
-│ ├── AthleteRepository.java
-│ ├── ConsultationRepository.java
-│ ├── NutritionEntryRepository.java
-├── dto/
-├── mapper/
-└── OlympicNutritionTrackerApplication.java
+    ├── model/
+    │   ├── Athlete.java
+    │   ├── Consultation.java
+    │   ├── NutritionEntry.java
+    ├── controller/
+    │   ├── AthleteController.java
+    │   ├── ConsultationController.java
+    │   ├── NutritionEntryController.java
+    ├── service/
+    │   ├── AthleteService.java
+    │   ├── ConsultationService.java
+    │   ├── NutritionEntryService.java
+    ├── repository/
+    │   ├── AthleteRepository.java
+    │   ├── ConsultationRepository.java
+    │   ├── NutritionEntryRepository.java
+    ├── dto/
+    ├── mapper/
+    └── OlympicNutritionTrackerApplication.java
+```
+
 ---
-
-
 
 ## 🌐 API Endpoints
 
@@ -74,17 +72,15 @@ The application manages athletes' profiles and their daily nutrition entries, in
 | `GET` | `/api/db-check` | Test database connection |
 
 ---
----
 
 ## 📊 Structure de la Base de Données (MySQL)
 
-Le projet **Olympic Nutrition Tracker** utilise une base de données relationnelle MySQL pour stocker les informations des athlètes, des consultations, et du suivi nutritionnel quotidien.  
+Le projet **Olympic Nutrition Tracker** utilise une base de données relationnelle MySQL pour stocker les informations des athlètes, des consultations et du suivi nutritionnel quotidien.  
 Chaque table est reliée par des clés étrangères pour assurer l’intégrité des données.
 
 ---
 
 ### 🧍 Table `athletes`
-Contient les informations de base sur les athlètes.
 
 | Champ | Type | Description |
 |--------|------|-------------|
@@ -103,7 +99,6 @@ Contient les informations de base sur les athlètes.
 ---
 
 ### 💬 Table `consultations`
-Enregistre les consultations entre les athlètes et leurs coachs.
 
 | Champ | Type | Description |
 |--------|------|-------------|
@@ -120,26 +115,25 @@ Enregistre les consultations entre les athlètes et leurs coachs.
 ---
 
 ### 🥗 Table `nutrition_entries`
-Stocke les données alimentaires et nutritionnelles journalières.
 
 | Champ | Type | Description |
 |--------|------|-------------|
 | `id` | BIGINT (PK) | Identifiant unique de l’entrée |
 | `date` | DATE | Date du suivi alimentaire |
-| `calories` | INT | Apport calorique total de la journée |
-| `protein` | INT | Quantité de protéines (en grammes) |
-| `carbs` | INT | Quantité de glucides (en grammes) |
-| `fat` | INT | Quantité de lipides (en grammes) |
-| `notes` | TEXT | Notes ou observations du coach |
-| `athlete_id` | BIGINT (FK) | Référence vers l’athlète concerné |
+| `calories` | INT | Apport calorique total |
+| `protein` | INT | Protéines (g) |
+| `carbs` | INT | Glucides (g) |
+| `fat` | INT | Lipides (g) |
+| `notes` | TEXT | Notes ou observations |
+| `athlete_id` | BIGINT (FK) | Référence vers l’athlète |
 
 🔗 **Relations :**
 - Plusieurs entrées peuvent appartenir à un même `athlete`
-- L’entrée est supprimée automatiquement si l’athlète est supprimé (cascade)
+- Suppression en cascade si l’athlète est supprimé
 
 ---
 
-### 🧠 Exemple de schéma simplifié :
+### 🧠 Exemple de schéma simplifié
 
 ```mermaid
 erDiagram
@@ -174,88 +168,77 @@ erDiagram
 
     ATHLETE ||--o{ CONSULTATION : "possède"
     ATHLETE ||--o{ NUTRITION_ENTRY : "enregistre"
+```
 
 ---
 
-
-##  Author
+## 👩‍💻 Author
 
 **Eman Altohami**  
 Bachelor – Développeur Java, Studi (2025)
 
-GitHub Repository:  
- [https://github.com/eman-java-dev/OlympicNutritionTracker](https://github.com/eman-java-dev/OlympicNutritionTracker)
+🔗 **GitHub Repository:**  
+[https://github.com/eman-java-dev/OlympicNutritionTracker](https://github.com/eman-java-dev/OlympicNutritionTracker)
 
 ---
 
 ## 🏁 How to Run the Project
 
-1. Clone the repository:
+1. **Clone the repository**
    ```bash
    git clone https://github.com/eman-java-dev/OlympicNutritionTracker.git
+   ```
+2. **Open it in IntelliJ IDEA**
+3. **Run the application**
+4. **Access it from your browser or Postman:**  
+   👉 [http://localhost:8080/api/athletes](http://localhost:8080/api/athletes)
 
-2.Open it in IntelliJ IDEA
-
-3.Run the application
-
-4.Access it from your browser or Postman
-
-http://localhost:8080/api/athletes
-This backend was built for educational purposes as part of Bloc 3 (Projet Final – Java Spring Boot).
+> This backend was built for educational purposes as part of *Bloc 3 – Projet Final (Java Spring Boot)*.
 
 ---
 
+## 📸 API Test Screenshots (Postman)
 
-
- 📸 API Test Screenshots (Postman)
-
-Below are examples of API tests performed using Postman.
 ### 👟 Athletes
 
-###   (POST /api/athletes)
+**POST /api/athletes**  
 
-###  Get All Athletes (GET /api/athletes)
+**GET /api/athletes**  
 
-###  Update Athlete (PUT /api/athletes/{id})
+**PUT /api/athletes/{id}**  
 
-###  Delete Athlete (DELETE /api/athletes/{id})
+**DELETE /api/athletes/{id}**  
 
-## Consultations
+---
 
-- **POST /api/consultations**  
+### 💬 Consultations
 
-- **PUT /api/consultations/{id}**  
+**POST /api/consultations**  
 
-- **GET /api/consultations**  
+**PUT /api/consultations/{id}**  
 
+**GET /api/consultations**  
 
-## 🥗 Nutrition Entries (Suivi nutritionnel)
+---
+
+### 🥗 Nutrition Entries (Suivi nutritionnel)
 
 > Toutes les requêtes Nutrition nécessitent une authentification **Basic Auth** (rôle : ADMIN ou COACH).
 
 ---
 
-### 1️ GET — Récupérer toutes les entrées
-**GET** `/api/nutrition-entries`
+#### 1️⃣ GET — Récupérer toutes les entrées
+**GET** `/api/nutrition-entries`  
 
-
----
-
-### 2️ GET — Récupérer une entrée par ID
+#### 2️⃣ GET — Récupérer une entrée par ID
 **GET** `/api/nutrition-entries/{id}`  
-Exemple : `/api/nutrition-entries/1`
+Exemple : `/api/nutrition-entries/1`  
 
-
----
-
-### 3️ GET — Récupérer les entrées par Athlète
+#### 3️⃣ GET — Récupérer les entrées par Athlète
 **GET** `/api/nutrition-entries?athleteId={athleteId}`  
-Exemple : `/api/nutrition-entries?athleteId=1`
+Exemple : `/api/nutrition-entries?athleteId=1`  
 
-
----
-
-### 4️ POST — Créer une nouvelle entrée
+#### 4️⃣ POST — Créer une nouvelle entrée
 **POST** `/api/nutrition-entries`  
 🧩 **Corps (JSON)** :
 ```json
@@ -268,15 +251,11 @@ Exemple : `/api/nutrition-entries?athleteId=1`
   "fat": 60,
   "notes": "Création d'une nouvelle entrée via Postman"
 }
+```
 
---- 
-
----
-
-### 5️ PUT — Mettre à jour une entrée
-**PUT** `/api/nutrition-entries/{id}`
-
-
+#### 5️⃣ PUT — Mettre à jour une entrée
+**PUT** `/api/nutrition-entries/{id}`  
+```json
 {
   "athleteId": 1,
   "date": "2025-11-04",
@@ -286,14 +265,12 @@ Exemple : `/api/nutrition-entries?athleteId=1`
   "fat": 62,
   "notes": "Mise à jour après le déjeuner"
 }
+```
+
+#### 6️⃣ DELETE — Supprimer une entrée
+**DELETE** `/api/nutrition-entries/{id}`  
 
 ---
-### 6️ DELETE — Supprimer une entrée
-**DELETE** `/api/nutrition-entries/{id}`
 
-
----
-
-🧩 Note
-
-This backend was built for educational purposes as part of Bloc 3 – Projet Final (Java Spring Boot) at Studi
+🧩 **Note**  
+This backend was built for educational purposes as part of **Bloc 3 – Projet Final (Java Spring Boot)** at Studi.
