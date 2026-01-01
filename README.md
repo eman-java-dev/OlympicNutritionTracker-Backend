@@ -120,21 +120,23 @@ Chaque table est reliée par des clés étrangères pour assurer l’intégrité
 
 ---
 
-### 🧍 Table `athletes`
+🧍 Table athletes
 
-| Champ | Type | Description |
-|--------|------|-------------|
-| `id` | BIGINT (PK) | Identifiant unique de l’athlète |
-| `name` | VARCHAR(100) | Nom complet de l’athlète |
-| `age` | INT | Âge de l’athlète |
-| `gender` | VARCHAR(10) | Sexe (`Homme` / `Femme`) |
-| `height` | DOUBLE | Taille en centimètres |
-| `weight` | DOUBLE | Poids en kilogrammes |
-| `bmi` | DOUBLE | Indice de masse corporelle (calculé automatiquement) |
+| Champ     | Type         | Description |
+|-----------|--------------|-------------|
+| id        | BIGINT (PK)  | Identifiant unique de l’athlète |
+| name      | VARCHAR(100) | Nom complet de l’athlète |
+| age       | INT          | Âge de l’athlète |
+| gender    | VARCHAR(10)  | Sexe (Homme / Femme) |
+| height    | DOUBLE       | Taille en centimètres |
+| weight    | DOUBLE       | Poids en kilogrammes |
+| bmi       | DOUBLE       | Indice de masse corporelle (calculé automatiquement) |
+| coach_id  | BIGINT (FK)  | Coach assigné à l’athlète |
 
-🔗 **Relations :**
-- Un `athlete` peut avoir plusieurs `nutrition_entries`
-- Un `athlete` peut être lié à plusieurs `consultations`
+🔗 Relations :
+- Un athlète peut avoir plusieurs nutrition_entries
+- Un athlète peut être lié à plusieurs consultations
+- Un athlète est suivi par un seul coach
 
 ---
 
@@ -170,8 +172,18 @@ Chaque table est reliée par des clés étrangères pour assurer l’intégrité
 🔗 **Relations :**
 - Plusieurs entrées peuvent appartenir à un même `athlete`
 - Suppression en cascade si l’athlète est supprimé
-
 ---
+🧑‍🏫 Table coaches
+
+| Champ      | Type         | Description |
+|------------|--------------|-------------|
+| id         | BIGINT (PK)  | Identifiant unique du coach |
+| name       | VARCHAR(120) | Nom complet du coach |
+| specialty  | VARCHAR(120) | Spécialité du coach |
+
+🔗 Relations :
+- Un coach peut suivre plusieurs athlètes
+- Un coach peut être lié à plusieurs consultations
 
 ### 🧠 Exemple de schéma simplifié
 
