@@ -1,5 +1,7 @@
 package com.eman.tracker.olympicnutritiontracker.service;
 
+import com.eman.tracker.olympicnutritiontracker.dto.ConsultationRequest;
+import com.eman.tracker.olympicnutritiontracker.exception.ResourceNotFoundException;
 import com.eman.tracker.olympicnutritiontracker.model.Athlete;
 import com.eman.tracker.olympicnutritiontracker.model.Coach;
 import com.eman.tracker.olympicnutritiontracker.model.Consultation;
@@ -9,12 +11,10 @@ import com.eman.tracker.olympicnutritiontracker.repository.ConsultationRepositor
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ConsultationService {
-
     private final ConsultationRepository consultations;
     private final AthleteRepository athletes;
     private final CoachRepository coaches;
@@ -26,52 +26,56 @@ public class ConsultationService {
         this.athletes = athletes;
         this.coaches = coaches;
     }
-
-    // 🟢 عرض كل الاستشارات (مع التصفح Pagination)
+    // عرض كل الاستشارات (مع التصفح Pagination)
     public Page<Consultation> list(Pageable pageable) {
         return consultations.findAll(pageable);
     }
+    // إنشاء استشارة جديدة
+    @Transactional
+    public Consultation create(ConsultationRequest req) {
 
-    // 🟢 إنشاء استشارة جديدة
-    public Consultation create(String message, LocalDateTime scheduledAt, Long athleteId, Long coachId) {
-        Athlete athlete = athletes.findById(athleteId)
-                .orElseThrow(() -> new RuntimeException("Athlete not found with id: " + athleteId));
+        Athlete athlete = athletes.findById(req.getAthleteId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Athlete not found with id: " + req.getAthleteId()));
 
-        Coach coach = coaches.findById(coachId)
-                .orElseThrow(() -> new RuntimeException("Coach not found with id: " + coachId));
+        Coach coach = coaches.findById(req.getCoachId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Coach not found with id: " + req.getCoachId()));
 
         Consultation c = new Consultation();
-        c.setMessage(message);
-        c.setScheduledAt(scheduledAt);
+        c.setMessage(req.getMessage());
+        c.setScheduledAt(req.getScheduledAt());
         c.setAthlete(athlete);
         c.setCoach(coach);
 
         return consultations.save(c);
     }
-
-    // 🟡 تحديث استشارة موجودة
-    public Consultation update(Long id, String message, LocalDateTime scheduledAt, Long athleteId, Long coachId) {
+    // تحديث استشارة موجودة
+    @Transactional
+    public Consultation update(Long id, ConsultationRequest req) {
         Consultation existing = consultations.findById(id)
-                .orElseThrow(() -> new RuntimeException("Consultation not found with id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Consultation not found with id: " + id));
 
-        Athlete athlete = athletes.findById(athleteId)
-                .orElseThrow(() -> new RuntimeException("Athlete not found with id: " + athleteId));
+        Athlete athlete = athletes.findById(req.getAthleteId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Athlete not found with id: " + req.getAthleteId()));
 
-        Coach coach = coaches.findById(coachId)
-                .orElseThrow(() -> new RuntimeException("Coach not found with id: " + coachId));
-
-        existing.setMessage(message);
-        existing.setScheduledAt(scheduledAt);
+        Coach coach = coaches.findById(req.getCoachId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Coach not found with id: " + req.getCoachId()));
+        existing.setMessage(req.getMessage());
+        existing.setScheduledAt(req.getScheduledAt());
         existing.setAthlete(athlete);
         existing.setCoach(coach);
 
         return consultations.save(existing);
     }
-
-    //  حذف استشارة حسب الـ id
+    // حذف استشارة حسب الـ id
+    @Transactional
     public void delete(Long id) {
         if (!consultations.existsById(id)) {
-            throw new RuntimeException("Consultation not found with id: " + id);
+            throw new ResourceNotFoundException("Consultation not found with id: " + id);
         }
         consultations.deleteById(id);
     }

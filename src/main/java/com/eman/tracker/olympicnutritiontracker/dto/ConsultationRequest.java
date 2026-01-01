@@ -1,13 +1,24 @@
 package com.eman.tracker.olympicnutritiontracker.dto;
 
+import jakarta.validation.constraints.*;   // ✅ للتحقق من القيم
 import java.time.LocalDateTime;
 
 public class ConsultationRequest {
+
+    @NotBlank
+    @Size(max = 300)
     private String message;
+
+    @NotNull
     private LocalDateTime scheduledAt;
+
+    @NotNull
     private Long athleteId;
+
+    @NotNull
     private Long coachId;
 
+    // ===== Getters / Setters =====
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
 

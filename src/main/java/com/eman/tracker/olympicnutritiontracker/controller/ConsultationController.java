@@ -4,6 +4,7 @@ import com.eman.tracker.olympicnutritiontracker.dto.ConsultationRequest;
 import com.eman.tracker.olympicnutritiontracker.dto.ConsultationResponse;
 import com.eman.tracker.olympicnutritiontracker.mapper.ConsultationMapper;
 import com.eman.tracker.olympicnutritiontracker.service.ConsultationService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -28,26 +29,15 @@ public class ConsultationController {
     // POST: create new consultation
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ConsultationResponse create(@RequestBody ConsultationRequest req) {
-        return ConsultationMapper.toResponse(
-                service.create(req.getMessage(),
-                        req.getScheduledAt(),
-                        req.getAthleteId(),
-                        req.getCoachId())
-        );
+    public ConsultationResponse create(@Valid @RequestBody ConsultationRequest req) {
+        return ConsultationMapper.toResponse(service.create(req));
     }
 
     // PUT: update consultation by id
     @PutMapping("/{id}")
     public ConsultationResponse update(@PathVariable Long id,
-                                       @RequestBody ConsultationRequest req) {
-        return ConsultationMapper.toResponse(
-                service.update(id,
-                        req.getMessage(),
-                        req.getScheduledAt(),
-                        req.getAthleteId(),
-                        req.getCoachId())
-        );
+                                       @Valid @RequestBody ConsultationRequest req) {
+        return ConsultationMapper.toResponse(service.update(id, req));
     }
 
     // DELETE: delete consultation by id
