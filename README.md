@@ -29,26 +29,55 @@ The application manages athletes' profiles and their daily nutrition entries, in
 ## 🗂️ Project Structure
 
 ```
-└── java/com/eman/tracker/olympicnutritiontracker/
-    ├── model/
-    │   ├── Athlete.java
-    │   ├── Consultation.java
-    │   ├── NutritionEntry.java
-    ├── controller/
-    │   ├── AthleteController.java
-    │   ├── ConsultationController.java
-    │   ├── NutritionEntryController.java
-    ├── service/
-    │   ├── AthleteService.java
-    │   ├── ConsultationService.java
-    │   ├── NutritionEntryService.java
-    ├── repository/
-    │   ├── AthleteRepository.java
-    │   ├── ConsultationRepository.java
-    │   ├── NutritionEntryRepository.java
-    ├── dto/
-    ├── mapper/
-    └── OlympicNutritionTrackerApplication.java
+src/main/java/com/eman/tracker/olympicnutritiontracker
+│
+├── config/
+│   └── SecurityConfig.java
+│
+├── controller/
+│   ├── AthleteController.java
+│   ├── CoachController.java
+│   ├── ConsultationController.java
+│   └── NutritionEntryController.java
+│
+├── dto/
+│   ├── AthleteDto.java
+│   ├── AthleteResponse.java
+│   ├── ConsultationRequest.java
+│   ├── ConsultationResponse.java
+│   ├── NutritionEntryRequest.java
+│   └── NutritionEntryResponse.java
+│
+├── exception/
+│   ├── GlobalExceptionHandler.java
+│   └── ResourceNotFoundException.java
+│
+├── mapper/
+│   ├── AthleteMapper.java
+│   ├── ConsultationMapper.java
+│   └── NutritionEntryMapper.java
+│
+├── model/
+│   ├── Athlete.java
+│   ├── Coach.java
+│   ├── Consultation.java
+│   └── NutritionEntry.java
+│
+├── repository/
+│   ├── AthleteRepository.java
+│   ├── CoachRepository.java
+│   ├── ConsultationRepository.java
+│   └── NutritionEntryRepository.java
+│
+├── service/
+│   ├── AthleteService.java
+│   ├── CoachService.java
+│   ├── ConsultationService.java
+│   └── NutritionEntryService.java
+│
+├── OlympicNutritionTrackerApplication.java
+└── TestDbController.java
+
 ```
 
 ---
@@ -56,20 +85,31 @@ The application manages athletes' profiles and their daily nutrition entries, in
 ## 🌐 API Endpoints
 
 | Method | Endpoint | Description |
-|---------|-----------|-------------|
-| `GET` | `/api/athletes` | Retrieve all athletes |
-| `POST` | `/api/athletes` | Create a new athlete |
-| `PUT` | `/api/athletes/{id}` | Update an athlete |
-| `DELETE` | `/api/athletes/{id}` | Delete an athlete |
-| `GET` | `/api/consultations` | Retrieve all consultations |
-| `POST` | `/api/consultations` | Create a new consultation |
-| `PUT` | `/api/consultations/{id}` | Update a consultation |
-| `DELETE` | `/api/consultations/{id}` | Delete a consultation |
-| `GET` | `/api/nutrition-entries` | Retrieve all nutrition entries |
-| `POST` | `/api/nutrition-entries` | Create a nutrition entry |
-| `PUT` | `/api/nutrition-entries/{id}` | Update a nutrition entry |
-| `DELETE` | `/api/nutrition-entries/{id}` | Delete a nutrition entry |
-| `GET` | `/api/db-check` | Test database connection |
+|-------|---------|-------------|
+| GET | `/api/athletes` | Retrieve all athletes |
+| GET | `/api/athletes/{id}` | Retrieve athlete by id |
+| POST | `/api/athletes` | Create a new athlete |
+| PUT | `/api/athletes/{id}` | Update an athlete |
+| DELETE | `/api/athletes/{id}` | Delete an athlete |
+| PUT | `/api/athletes/{athleteId}/assign-coach/{coachId}` | Assign coach to athlete |
+|  |  |  |
+| GET | `/api/coaches` | Retrieve all coaches |
+| POST | `/api/coaches` | Create a new coach |
+| GET | `/api/coaches/{id}` | Retrieve coach by id |
+| GET | `/api/coaches/{coachId}/athletes` | Retrieve athletes by coach |
+|  |  |  |
+| GET | `/api/consultations` | Retrieve all consultations |
+| POST | `/api/consultations` | Create a new consultation |
+| PUT | `/api/consultations/{id}` | Update a consultation |
+| DELETE | `/api/consultations/{id}` | Delete a consultation |
+|  |  |  |
+| GET | `/api/nutrition-entries` | Retrieve all nutrition entries |
+| GET | `/api/nutrition-entries/{id}` | Retrieve nutrition entry by id |
+| POST | `/api/nutrition-entries` | Create a nutrition entry |
+| PUT | `/api/nutrition-entries/{id}` | Update a nutrition entry |
+| DELETE | `/api/nutrition-entries/{id}` | Delete a nutrition entry |
+|  |  |  |
+| GET | `/api/db-check` | Test database connection |
 
 ---
 
