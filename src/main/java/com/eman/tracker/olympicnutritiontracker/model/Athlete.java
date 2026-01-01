@@ -23,17 +23,30 @@ public class Athlete {
     private Double height;
     private Double weight;
 
+    // 👇 الربط مع Coach (الجهة “ManyToOne”)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coach_id") // لو تفضّلي "coach_ref" غيّري الاسم هنا وهنا فقط
+    private Coach coach;
+
     // ===== Getters/Setters =====
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
     public Integer getAge() { return age; }
     public void setAge(Integer age) { this.age = age; }
+
     public String getGender() { return gender; }
     public void setGender(String gender) { this.gender = gender; }
+
     public Double getHeight() { return height; }
     public void setHeight(Double height) { this.height = height; }
+
     public Double getWeight() { return weight; }
     public void setWeight(Double weight) { this.weight = weight; }
+
+    public Coach getCoach() { return coach; }
+    public void setCoach(Coach coach) { this.coach = coach; }
 }

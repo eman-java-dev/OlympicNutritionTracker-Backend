@@ -4,7 +4,8 @@ import com.eman.tracker.olympicnutritiontracker.mapper.AthleteMapper;
 import com.eman.tracker.olympicnutritiontracker.dto.*;
 import com.eman.tracker.olympicnutritiontracker.model.Athlete;
 import com.eman.tracker.olympicnutritiontracker.service.AthleteService;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +14,10 @@ import org.springframework.web.bind.annotation.*;
 public class AthleteController {
 
     private final AthleteService service;
-    public AthleteController(AthleteService service) { this.service = service; }
+
+    public AthleteController(AthleteService service) {
+        this.service = service;
+    }
 
     @GetMapping
     public Page<AthleteResponse> list(Pageable pageable) {
@@ -38,7 +42,17 @@ public class AthleteController {
         return AthleteMapper.toResponse(updated);
     }
 
+    // ✅ NEW: Assign Coach to Athlete
+    @PutMapping("/{athleteId}/assign-coach/{coachId}")
+    public AthleteResponse assignCoach(@PathVariable Long athleteId,
+                                       @PathVariable Long coachId) {
+        Athlete updated = service.assignCoach(athleteId, coachId);
+        return AthleteMapper.toResponse(updated);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) { service.delete(id); }
+    public void delete(@PathVariable Long id) {
+        service.delete(id);
+    }
 }
