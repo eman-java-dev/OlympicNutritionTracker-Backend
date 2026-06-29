@@ -20,28 +20,74 @@ public class Coach {
     @Column(length = 120)
     private String specialty;
 
-    // ✅ نخفي العلاقات من JSON (باش الـAPI يرجّع Coach نظيف)
-    @OneToMany(mappedBy = "coach", cascade = CascadeType.ALL, orphanRemoval = false)
+    @Email
+    @Column(length = 160)
+    private String email;
+
+    @Column(length = 40)
+    private String phone;
+
+    @OneToMany(mappedBy = "coach", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Consultation> consultations;
 
-    @OneToMany(mappedBy = "coach", cascade = CascadeType.ALL, orphanRemoval = false)
+    @OneToMany(mappedBy = "coach")
     @JsonIgnore
     private List<Athlete> athletes;
 
-    // ===== Getters/Setters =====
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getSpecialty() { return specialty; }
-    public void setSpecialty(String specialty) { this.specialty = specialty; }
+    public String getName() {
+        return name;
+    }
 
-    public List<Consultation> getConsultations() { return consultations; }
-    public void setConsultations(List<Consultation> consultations) { this.consultations = consultations; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public List<Athlete> getAthletes() { return athletes; }
-    public void setAthletes(List<Athlete> athletes) { this.athletes = athletes; }
+    public String getSpecialty() {
+        return specialty;
+    }
+
+    public void setSpecialty(String specialty) {
+        this.specialty = specialty;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public List<Consultation> getConsultations() {
+        return consultations;
+    }
+
+    public void setConsultations(List<Consultation> consultations) {
+        this.consultations = consultations;
+    }
+
+    public List<Athlete> getAthletes() {
+        return athletes;
+    }
+
+    public void setAthletes(List<Athlete> athletes) {
+        this.athletes = athletes;
+    }
 }
