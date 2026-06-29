@@ -1,11 +1,13 @@
 package com.eman.tracker.olympicnutritiontracker.repository;
 
 import com.eman.tracker.olympicnutritiontracker.model.Consultation;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface ConsultationRepository extends JpaRepository<Consultation, Long> {
-    Page<Consultation> findByCoach_Id(Long coachId, Pageable pageable);
-    Page<Consultation> findByAthlete_Id(Long athleteId, Pageable pageable);
+
+    List<Consultation> findByCoach_Id(Long coachId);
+
+    void deleteByCoach_Id(Long coachId);
 }

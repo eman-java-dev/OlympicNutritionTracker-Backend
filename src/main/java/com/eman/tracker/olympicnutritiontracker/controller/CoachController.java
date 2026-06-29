@@ -3,6 +3,7 @@ package com.eman.tracker.olympicnutritiontracker.controller;
 import com.eman.tracker.olympicnutritiontracker.model.Coach;
 import com.eman.tracker.olympicnutritiontracker.service.CoachService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Page;
@@ -30,48 +31,58 @@ public class CoachController {
             List<Coach> found = coachService.searchByName(search);
             return new PageImpl<>(found, pageable, found.size());
         }
+
         return coachService.list(pageable);
     }
 
-    // ✅ GET: Get coach by id
     @GetMapping("/{id}")
     public Coach getById(@PathVariable Long id) {
         return coachService.getById(id);
     }
 
-    // ✅ POST: Create coach
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Coach create(@Valid @RequestBody CoachRequest req) {
-        return coachService.create(req.getName(), req.getSpecialty());
+        return coachService.create(
+                req.getName(),
+                req.getSpecialty(),
+                req.getEmail(),
+                req.getPhone()
+        );
     }
 
-    // ✅ PUT: Update coach
     @PutMapping("/{id}")
     public Coach update(@PathVariable Long id, @Valid @RequestBody CoachRequest req) {
-        return coachService.update(id, req.getName(), req.getSpecialty());
+        return coachService.update(
+                id,
+                req.getName(),
+                req.getSpecialty(),
+                req.getEmail(),
+                req.getPhone()
+        );
     }
 
-    // ✅ DELETE: Delete coach
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         coachService.delete(id);
     }
 
-    // ✅ GET: Athletes by coach
     @GetMapping("/{coachId}/athletes")
     public ResponseEntity<List<AthleteResponse>> getAthletesByCoach(@PathVariable Long coachId) {
-        List<AthleteResponse> out = coachService.getAthletesByCoach(coachId).stream().map(a -> {
-            AthleteResponse r = new AthleteResponse();
-            r.setId(a.getId());
-            r.setName(a.getName());
-            r.setAge(a.getAge());
-            r.setGender(a.getGender());
-            r.setHeight(a.getHeight());
-            r.setWeight(a.getWeight());
-            return r;
-        }).toList();
+        List<AthleteResponse> out = coachService.getAthletesByCoach(coachId)
+                .stream()
+                .map(a -> {
+                    AthleteResponse r = new AthleteResponse();
+                    r.setId(a.getId());
+                    r.setName(a.getName());
+                    r.setAge(a.getAge());
+                    r.setGender(a.getGender());
+                    r.setHeight(a.getHeight());
+                    r.setWeight(a.getWeight());
+                    return r;
+                })
+                .toList();
 
         return ResponseEntity.ok(out);
     }
@@ -85,11 +96,44 @@ public class CoachController {
         @Size(max = 120, message = "specialty must be <= 120 characters")
         private String specialty;
 
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        @Email(message = "email must be valid")
+        @Size(max = 160, message = "email must be <= 160 characters")
+        private String email;
 
-        public String getSpecialty() { return specialty; }
-        public void setSpecialty(String specialty) { this.specialty = specialty; }
+        @Size(max = 40, message = "phone must be <= 40 characters")
+        private String phone;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getSpecialty() {
+            return specialty;
+        }
+
+        public void setSpecialty(String specialty) {
+            this.specialty = specialty;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public String getPhone() {
+            return phone;
+        }
+
+        public void setPhone(String phone) {
+            this.phone = phone;
+        }
     }
 
     static class AthleteResponse {
@@ -100,22 +144,52 @@ public class CoachController {
         private Double height;
         private Double weight;
 
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
+        public Long getId() {
+            return id;
+        }
 
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public void setId(Long id) {
+            this.id = id;
+        }
 
-        public Integer getAge() { return age; }
-        public void setAge(Integer age) { this.age = age; }
+        public String getName() {
+            return name;
+        }
 
-        public String getGender() { return gender; }
-        public void setGender(String gender) { this.gender = gender; }
+        public void setName(String name) {
+            this.name = name;
+        }
 
-        public Double getHeight() { return height; }
-        public void setHeight(Double height) { this.height = height; }
+        public Integer getAge() {
+            return age;
+        }
 
-        public Double getWeight() { return weight; }
-        public void setWeight(Double weight) { this.weight = weight; }
+        public void setAge(Integer age) {
+            this.age = age;
+        }
+
+        public String getGender() {
+            return gender;
+        }
+
+        public void setGender(String gender) {
+            this.gender = gender;
+        }
+
+        public Double getHeight() {
+            return height;
+        }
+
+        public void setHeight(Double height) {
+            this.height = height;
+        }
+
+        public Double getWeight() {
+            return weight;
+        }
+
+        public void setWeight(Double weight) {
+            this.weight = weight;
+        }
     }
 }
