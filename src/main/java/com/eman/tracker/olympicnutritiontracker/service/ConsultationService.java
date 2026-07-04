@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ConsultationService {
+
     private final ConsultationRepository consultations;
     private final AthleteRepository athletes;
     private final CoachRepository coaches;
@@ -26,14 +27,19 @@ public class ConsultationService {
         this.athletes = athletes;
         this.coaches = coaches;
     }
-    // عرض كل الاستشارات (مع التصفح Pagination)
+
     public Page<Consultation> list(Pageable pageable) {
         return consultations.findAll(pageable);
     }
-    // إنشاء استشارة جديدة
+
+    public Consultation get(Long id) {
+        return consultations.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Consultation not found with id: " + id));
+    }
+
     @Transactional
     public Consultation create(ConsultationRequest req) {
-
         Athlete athlete = athletes.findById(req.getAthleteId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Athlete not found with id: " + req.getAthleteId()));
@@ -50,12 +56,10 @@ public class ConsultationService {
 
         return consultations.save(c);
     }
-    // تحديث استشارة موجودة
+
     @Transactional
     public Consultation update(Long id, ConsultationRequest req) {
-        Consultation existing = consultations.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Consultation not found with id: " + id));
+        Consultation existing = get(id);
 
         Athlete athlete = athletes.findById(req.getAthleteId())
                 .orElseThrow(() ->
@@ -64,6 +68,7 @@ public class ConsultationService {
         Coach coach = coaches.findById(req.getCoachId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Coach not found with id: " + req.getCoachId()));
+
         existing.setMessage(req.getMessage());
         existing.setScheduledAt(req.getScheduledAt());
         existing.setAthlete(athlete);
@@ -71,12 +76,10 @@ public class ConsultationService {
 
         return consultations.save(existing);
     }
-    // حذف استشارة حسب الـ id
+
     @Transactional
     public void delete(Long id) {
-        if (!consultations.existsById(id)) {
-            throw new ResourceNotFoundException("Consultation not found with id: " + id);
-        }
-        consultations.deleteById(id);
+        Consultation existing = get(id);
+        consultations.delete(existing);
     }
 }

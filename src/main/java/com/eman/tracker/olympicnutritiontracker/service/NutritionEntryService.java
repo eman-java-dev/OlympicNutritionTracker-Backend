@@ -1,6 +1,7 @@
 package com.eman.tracker.olympicnutritiontracker.service;
 
 import com.eman.tracker.olympicnutritiontracker.dto.NutritionEntryRequest;
+import com.eman.tracker.olympicnutritiontracker.exception.ResourceNotFoundException;
 import com.eman.tracker.olympicnutritiontracker.mapper.NutritionEntryMapper;
 import com.eman.tracker.olympicnutritiontracker.model.Athlete;
 import com.eman.tracker.olympicnutritiontracker.model.NutritionEntry;
@@ -31,28 +32,32 @@ public class NutritionEntryService {
 
     public NutritionEntry get(Long id) {
         return entries.findById(id)
-                .orElseThrow(() -> new RuntimeException("NutritionEntry not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("NutritionEntry not found with id: " + id));
     }
 
     public NutritionEntry create(NutritionEntryRequest req) {
         Athlete athlete = athletes.findById(req.getAthleteId())
-                .orElseThrow(() -> new RuntimeException("Athlete not found with id: " + req.getAthleteId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Athlete not found with id: " + req.getAthleteId()));
+
         NutritionEntry e = NutritionEntryMapper.toEntity(req, athlete);
         return entries.save(e);
     }
 
     public NutritionEntry update(Long id, NutritionEntryRequest req) {
         NutritionEntry existing = get(id);
+
         Athlete athlete = athletes.findById(req.getAthleteId())
-                .orElseThrow(() -> new RuntimeException("Athlete not found with id: " + req.getAthleteId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Athlete not found with id: " + req.getAthleteId()));
+
         NutritionEntryMapper.copyForUpdate(req, existing, athlete);
         return entries.save(existing);
     }
 
     public void delete(Long id) {
         if (!entries.existsById(id)) {
-            throw new RuntimeException("NutritionEntry not found with id: " + id);
+            throw new ResourceNotFoundException("NutritionEntry not found with id: " + id);
         }
+
         entries.deleteById(id);
     }
 }

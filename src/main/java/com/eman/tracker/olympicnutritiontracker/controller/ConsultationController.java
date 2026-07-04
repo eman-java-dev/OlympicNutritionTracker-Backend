@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,28 +21,34 @@ public class ConsultationController {
         this.service = service;
     }
 
-    // GET: list all consultations (paged)
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','COACH','ATHLETE')")
     public Page<ConsultationResponse> list(Pageable pageable) {
         return service.list(pageable).map(ConsultationMapper::toResponse);
     }
 
-    // POST: create new consultation
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','COACH','ATHLETE')")
+    public ConsultationResponse get(@PathVariable Long id) {
+        return ConsultationMapper.toResponse(service.get(id));
+    }
+
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','COACH')")
     @ResponseStatus(HttpStatus.CREATED)
     public ConsultationResponse create(@Valid @RequestBody ConsultationRequest req) {
         return ConsultationMapper.toResponse(service.create(req));
     }
 
-    // PUT: update consultation by id
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','COACH')")
     public ConsultationResponse update(@PathVariable Long id,
                                        @Valid @RequestBody ConsultationRequest req) {
         return ConsultationMapper.toResponse(service.update(id, req));
     }
 
-    // DELETE: delete consultation by id
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         service.delete(id);
