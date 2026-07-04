@@ -1,355 +1,251 @@
-# 🏋️‍♀️ Olympic Nutrition Tracker
+# 🏋️ Olympic Nutrition Tracker
 
-This is a **Spring Boot REST API** developed for the **Olympic Nutrition Tracker** project as part of **Bloc 3 – Studi 2025**.
+Backend REST API developed with **Spring Boot** for the **Olympic Nutrition Tracker** project as part of the **Bachelor Développeur d'Application – Studi**.
 
-The application manages athletes, coaches, consultations, and daily nutrition entries.
-It includes CRUD operations, MySQL persistence, a basic authentication system, and JUnit service tests.
-
----
-
-## 🚀 Features
-
-* CRUD management for athletes
-* CRUD management for coaches
-* CRUD management for consultations
-* CRUD management for nutrition entries
-* Assign a coach to an athlete
-* Track daily nutrition data: calories, protein, carbs, fat, notes
-* MySQL database integration
-* Basic authentication with Spring Security
-* JUnit 5 tests for service layer
-* API testing with Postman
+The application manages athletes, coaches, consultations, and nutrition entries through a secure REST API.
 
 ---
 
-## 🔐 Authentication
+# 🚀 Features
 
-The backend uses **Spring Security Basic Auth** with demonstration accounts.
-
-### Demo Accounts
-
-| Username | Password | Role  |
-| -------- | -------- | ----- |
-| admin    | admin123 | ADMIN |
-| coach    | coach123 | COACH |
-
-Current authentication is used for demonstration purposes.
-A future improvement is planned to implement a complete JWT authentication system with dynamic user management and role-based permissions.
-
-Planned roles:
-
-* **ADMIN**: full access to athletes, coaches, consultations, nutrition entries and user management.
-* **COACH**: access to followed athletes, consultations and nutrition tracking.
-* **ATHLETE**: limited access to personal data and consultations.
-
----
-
-## 🛠️ Technologies Used
-
-* Java 21
-* Spring Boot 3.3.4
-* Spring Web
-* Spring Data JPA
-* Spring Security
-* MySQL
-* Hibernate
-* Jakarta Validation
-* JUnit 5
-* AssertJ
-* Postman
-* IntelliJ IDEA
+- CRUD management for Athletes
+- CRUD management for Coaches
+- CRUD management for Consultations
+- CRUD management for Nutrition Entries
+- Assign a Coach to an Athlete
+- JWT Authentication
+- Role-Based Authorization (ADMIN, COACH, ATHLETE)
+- Spring Security
+- BCrypt Password Encryption
+- Global Exception Handling
+- Validation using Jakarta Validation
+- Pagination using Spring Data
+- MySQL Database Integration
+- Swagger / OpenAPI Documentation
+- JUnit 5 Service Tests
+- API Testing with Postman
 
 ---
 
-## 🗂️ Project Structure
+# 🔐 Authentication
+
+The application uses **Spring Security with JWT Authentication**.
+
+Authentication workflow:
+
+1. Register a new user.
+2. Login using username and password.
+3. Receive a JWT Token.
+4. Use the token to access protected endpoints.
+
+Example:
+
+```http
+Authorization: Bearer <JWT_TOKEN>
+```
+
+---
+
+# 👥 User Roles
+
+## ADMIN
+
+- Full CRUD on Athletes
+- Full CRUD on Coaches
+- Full CRUD on Consultations
+- Full CRUD on Nutrition Entries
+- User management
+
+---
+
+## COACH
+
+- View Athletes
+- View Coaches
+- Create Consultations
+- Update Consultations
+- Create Nutrition Entries
+- Update Nutrition Entries
+
+---
+
+## ATHLETE
+
+- View Consultations
+- View Nutrition Entries
+- Cannot create, update or delete protected resources
+
+---
+
+# 🛠️ Technologies Used
+
+- Java 21
+- Spring Boot 3.3.4
+- Spring Security
+- JWT
+- BCrypt Password Encoder
+- Spring Data JPA
+- Hibernate
+- MySQL
+- Jakarta Validation
+- Swagger / OpenAPI
+- JUnit 5
+- Postman
+- Maven
+- IntelliJ IDEA
+
+---
+
+# 📂 Project Structure
 
 ```text
 src/main/java/com/eman/tracker/olympicnutritiontracker
-│
-├── config/
-│   ├── SecurityConfig.java
-│   ├── CorsConfig.java
-│   └── OpenApiConfig.java
-│
-├── controller/
-│   ├── AthleteController.java
-│   ├── CoachController.java
-│   ├── ConsultationController.java
-│   └── NutritionEntryController.java
-│
-├── dto/
-│   ├── ConsultationRequest.java
-│   ├── ConsultationResponse.java
-│   ├── NutritionEntryRequest.java
-│   └── NutritionEntryResponse.java
-│
-├── exception/
-│   ├── GlobalExceptionHandler.java
-│   └── ResourceNotFoundException.java
-│
-├── mapper/
-│   ├── AthleteMapper.java
-│   ├── ConsultationMapper.java
-│   └── NutritionEntryMapper.java
-│
-├── model/
-│   ├── Athlete.java
-│   ├── Coach.java
-│   ├── Consultation.java
-│   └── NutritionEntry.java
-│
-├── repository/
-│   ├── AthleteRepository.java
-│   ├── CoachRepository.java
-│   ├── ConsultationRepository.java
-│   └── NutritionEntryRepository.java
-│
-├── service/
-│   ├── AthleteService.java
-│   ├── CoachService.java
-│   ├── ConsultationService.java
-│   └── NutritionEntryService.java
-│
-└── OlympicNutritionTrackerApplication.java
+
+├── config
+├── controller
+├── dto
+├── exception
+├── mapper
+├── model
+├── repository
+├── security
+├── service
+└── OlympicNutritionTrackerApplication
 ```
 
 ---
 
-## 🌐 API Endpoints
+# 🔑 Authentication Endpoints
 
-### Athletes
-
-| Method | Endpoint                                           | Description                  |
-| ------ | -------------------------------------------------- | ---------------------------- |
-| GET    | `/api/athletes`                                    | Retrieve all athletes        |
-| GET    | `/api/athletes/{id}`                               | Retrieve athlete by id       |
-| POST   | `/api/athletes`                                    | Create a new athlete         |
-| PUT    | `/api/athletes/{id}`                               | Update an athlete            |
-| DELETE | `/api/athletes/{id}`                               | Delete an athlete            |
-| PUT    | `/api/athletes/{athleteId}/assign-coach/{coachId}` | Assign a coach to an athlete |
-
-### Coaches
-
-| Method | Endpoint                          | Description                           |
-| ------ | --------------------------------- | ------------------------------------- |
-| GET    | `/api/coaches`                    | Retrieve all coaches                  |
-| GET    | `/api/coaches/{id}`               | Retrieve coach by id                  |
-| POST   | `/api/coaches`                    | Create a new coach                    |
-| PUT    | `/api/coaches/{id}`               | Update a coach                        |
-| DELETE | `/api/coaches/{id}`               | Delete a coach                        |
-| GET    | `/api/coaches/{coachId}/athletes` | Retrieve athletes assigned to a coach |
-
-### Consultations
-
-| Method | Endpoint                  | Description                 |
-| ------ | ------------------------- | --------------------------- |
-| GET    | `/api/consultations`      | Retrieve all consultations  |
-| GET    | `/api/consultations/{id}` | Retrieve consultation by id |
-| POST   | `/api/consultations`      | Create a new consultation   |
-| PUT    | `/api/consultations/{id}` | Update a consultation       |
-| DELETE | `/api/consultations/{id}` | Delete a consultation       |
-
-### Nutrition Entries
-
-| Method | Endpoint                                       | Description                    |
-| ------ | ---------------------------------------------- | ------------------------------ |
-| GET    | `/api/nutrition-entries`                       | Retrieve all nutrition entries |
-| GET    | `/api/nutrition-entries/{id}`                  | Retrieve nutrition entry by id |
-| GET    | `/api/nutrition-entries?athleteId={athleteId}` | Retrieve entries by athlete    |
-| POST   | `/api/nutrition-entries`                       | Create a nutrition entry       |
-| PUT    | `/api/nutrition-entries/{id}`                  | Update a nutrition entry       |
-| DELETE | `/api/nutrition-entries/{id}`                  | Delete a nutrition entry       |
+| Method | Endpoint |
+|---------|----------|
+| POST | /api/auth/register |
+| POST | /api/auth/login |
 
 ---
 
-## 📊 MySQL Database Structure
+# 🌐 API Endpoints
 
-The project uses a relational MySQL database to store athletes, coaches, consultations and nutrition entries.
-Foreign keys are used to ensure data consistency between tables.
+## Athletes
 
----
-
-### Table `athletes`
-
-| Field    | Type      | Description               |
-| -------- | --------- | ------------------------- |
-| id       | BIGINT PK | Unique athlete identifier |
-| name     | VARCHAR   | Athlete name              |
-| age      | INT       | Athlete age               |
-| gender   | VARCHAR   | Athlete gender            |
-| height   | DOUBLE    | Height in cm              |
-| weight   | DOUBLE    | Weight in kg              |
-| coach_id | BIGINT FK | Assigned coach            |
-
-Relations:
-
-* One athlete can have many nutrition entries.
-* One athlete can have many consultations.
-* One athlete can be assigned to one coach.
+| Method | Endpoint |
+|---------|----------|
+| GET | /api/athletes |
+| GET | /api/athletes/{id} |
+| POST | /api/athletes |
+| PUT | /api/athletes/{id} |
+| DELETE | /api/athletes/{id} |
+| PUT | /api/athletes/{athleteId}/assign-coach/{coachId} |
 
 ---
 
-### Table `coaches`
+## Coaches
 
-| Field     | Type         | Description             |
-| --------- | ------------ | ----------------------- |
-| id        | BIGINT PK    | Unique coach identifier |
-| name      | VARCHAR(120) | Coach name              |
-| specialty | VARCHAR(120) | Coach specialty         |
-| email     | VARCHAR(160) | Coach email             |
-| phone     | VARCHAR(40)  | Coach phone number      |
-
-Relations:
-
-* One coach can follow many athletes.
-* One coach can be linked to many consultations.
+| Method | Endpoint |
+|---------|----------|
+| GET | /api/coaches |
+| GET | /api/coaches/{id} |
+| POST | /api/coaches |
+| PUT | /api/coaches/{id} |
+| DELETE | /api/coaches/{id} |
+| GET | /api/coaches/{coachId}/athletes |
 
 ---
 
-### Table `consultations`
+## Consultations
 
-| Field        | Type      | Description                    |
-| ------------ | --------- | ------------------------------ |
-| id           | BIGINT PK | Unique consultation identifier |
-| message      | TEXT      | Consultation message           |
-| scheduled_at | DATETIME  | Scheduled date and time        |
-| athlete_ref  | BIGINT FK | Related athlete                |
-| coach_ref    | BIGINT FK | Related coach                  |
-
-Relations:
-
-* Many consultations can belong to one athlete.
-* Many consultations can belong to one coach.
+| Method | Endpoint |
+|---------|----------|
+| GET | /api/consultations |
+| GET | /api/consultations/{id} |
+| POST | /api/consultations |
+| PUT | /api/consultations/{id} |
+| DELETE | /api/consultations/{id} |
 
 ---
 
-### Table `nutrition_entries`
+## Nutrition Entries
 
-| Field       | Type      | Description                       |
-| ----------- | --------- | --------------------------------- |
-| id          | BIGINT PK | Unique nutrition entry identifier |
-| date        | DATE      | Nutrition tracking date           |
-| calories    | INT       | Total calories                    |
-| protein     | INT       | Protein in grams                  |
-| carbs       | INT       | Carbs in grams                    |
-| fat         | INT       | Fat in grams                      |
-| notes       | TEXT      | Notes                             |
-| athlete_ref | BIGINT FK | Related athlete                   |
-
-Relations:
-
-* Many nutrition entries can belong to one athlete.
+| Method | Endpoint |
+|---------|----------|
+| GET | /api/nutrition-entries |
+| GET | /api/nutrition-entries/{id} |
+| GET | /api/nutrition-entries?athleteId={athleteId} |
+| POST | /api/nutrition-entries |
+| PUT | /api/nutrition-entries/{id} |
+| DELETE | /api/nutrition-entries/{id} |
 
 ---
 
-## 🧠 Simplified Database Diagram
+# 🗄️ Database
 
-```mermaid
-erDiagram
-    COACH ||--o{ ATHLETE : follows
-    COACH ||--o{ CONSULTATION : manages
-    ATHLETE ||--o{ CONSULTATION : has
-    ATHLETE ||--o{ NUTRITION_ENTRY : records
+The application uses **MySQL** as the relational database.
 
-    COACH {
-        BIGINT id
-        VARCHAR name
-        VARCHAR specialty
-        VARCHAR email
-        VARCHAR phone
-    }
+Main entities:
 
-    ATHLETE {
-        BIGINT id
-        VARCHAR name
-        INT age
-        VARCHAR gender
-        DOUBLE height
-        DOUBLE weight
-        BIGINT coach_id
-    }
+- Athlete
+- Coach
+- Consultation
+- NutritionEntry
+- User
 
-    CONSULTATION {
-        BIGINT id
-        TEXT message
-        DATETIME scheduled_at
-        BIGINT athlete_ref
-        BIGINT coach_ref
-    }
+Relationships:
 
-    NUTRITION_ENTRY {
-        BIGINT id
-        DATE date
-        INT calories
-        INT protein
-        INT carbs
-        INT fat
-        TEXT notes
-        BIGINT athlete_ref
-    }
-```
+- One Coach → Many Athletes
+- One Athlete → Many Nutrition Entries
+- One Athlete → Many Consultations
+- One Coach → Many Consultations
 
 ---
 
-## ✅ JUnit Tests
+# 🧪 Testing
 
-JUnit 5 tests were implemented for the main service layer.
+The application has been tested using **Postman**.
 
-Tested services:
+Validated features:
 
-* `CoachService`
-* `AthleteService`
-* `NutritionEntryService`
+- JWT Authentication
+- Login
+- Register
+- Role-Based Authorization
+- CRUD Operations
+- Validation
+- Exception Handling
+- 401 Unauthorized
+- 403 Forbidden
+- 404 Not Found
 
-Covered operations:
-
-* Create
-* Update
-* Delete
-
-All tests were executed successfully in IntelliJ IDEA.
-
-Example test classes:
-
-```text
-src/test/java/com/eman/tracker/olympicnutritiontracker/CoachServiceTest.java
-src/test/java/com/eman/tracker/olympicnutritiontracker/AthleteServiceTest.java
-src/test/java/com/eman/tracker/olympicnutritiontracker/NutritionEntryServiceTest.java
-```
-
-Run tests:
-
-```bash
-mvn test
-```
+JUnit 5 was used for service layer testing.
 
 ---
 
-## 🏁 How to Run the Project
+# ▶️ Running the Project
 
-1. Clone the repository:
+Clone the repository
 
 ```bash
 git clone https://github.com/eman-java-dev/OlympicNutritionTracker.git
 ```
 
-2. Open the backend project in IntelliJ IDEA.
+Open the project using IntelliJ IDEA.
 
-3. Configure MySQL database in `application.properties`.
+Configure MySQL in:
 
-4. Run the Spring Boot application:
+```text
+src/main/resources/application.properties
+```
+
+Run the application:
 
 ```bash
 mvn spring-boot:run
 ```
 
-5. Access the API:
+---
 
-```text
-http://localhost:8080/api/athletes
-```
+# 📖 Swagger
 
-6. Access Swagger UI:
+Swagger UI:
 
 ```text
 http://localhost:8080/swagger-ui/index.html
@@ -357,48 +253,46 @@ http://localhost:8080/swagger-ui/index.html
 
 ---
 
-## 📸 API Test Screenshots
+# 🔮 Future Improvements
 
-Screenshots of API tests are stored in:
-
-```text
-screenshots/
-```
-
-Examples:
-
-* Athletes CRUD
-* Coaches CRUD
-* Consultations CRUD
-* Nutrition entries CRUD
-* JUnit test results
+- Refresh Token
+- Email Verification
+- Password Reset
+- Angular Frontend
+- Docker Support
+- GitHub Actions CI/CD
+- Monitoring and Logging
+- Integration Tests
 
 ---
 
-## 🔮 Future Improvements
-
-Planned improvements include:
-
-* Implement JWT authentication.
-* Add dynamic user registration and login.
-* Add role-based access control for ADMIN, COACH and ATHLETE.
-* Protect Angular routes with AuthGuard and RoleGuard.
-* Add more integration tests.
-* Add CI/CD with GitHub Actions.
-* Improve monitoring and alerting.
-
----
-
-## 👩‍💻 Author
+# 👩‍💻 Author
 
 **Eman Altohami**
-Bachelor – Développeur Java, Studi 2025
 
-GitHub Repository:
-https://github.com/eman-java-dev/OlympicNutritionTracker
+Bachelor Développeur d'Application – Studi
+
+GitHub:
+
+https://github.com/eman-java-dev
 
 ---
 
-## 🧩 Note
+# 📌 Project Status
 
-This backend was built for educational purposes as part of **Bloc 3 – Projet Final Java Spring Boot** at Studi.
+This project provides a complete REST API secured with **JWT Authentication** and **Role-Based Authorization** using Spring Security.
+
+Implemented successfully:
+
+- JWT Authentication
+- Role-Based Authorization
+- CRUD Operations
+- Validation
+- Global Exception Handling
+- Pagination
+- Swagger Documentation
+- MySQL Integration
+- JUnit Tests
+- Postman API Testing
+
+The project is ready for demonstration and evaluation.
