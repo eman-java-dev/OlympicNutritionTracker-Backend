@@ -1,0 +1,29 @@
+-- Render with Prepare-ExamSession.ps1, then import into the disposable exam instance.
+USE olympic_exam_demo;
+
+START TRANSACTION;
+
+INSERT INTO coaches (id, name, specialty, email) VALUES
+    (1, 'Morgan Vale', 'Endurance nutrition', 'morgan.vale@example.invalid'),
+    (2, 'Rowan Pike', 'Strength nutrition', 'rowan.pike@example.invalid');
+
+INSERT INTO athletes (id, name, age, gender, height, weight, coach_id) VALUES
+    (1, 'Avery Sprint', 24, 'Female', 170.0, 62.0, 1),
+    (2, 'Casey Field', 26, 'Male', 183.0, 78.0, 2);
+
+INSERT INTO consultations (message, scheduled_at, athlete_ref, coach_ref) VALUES
+    ('Plan meals for race week', TIMESTAMP(DATE_ADD(CURRENT_DATE, INTERVAL 1 DAY), '10:00:00'), 1, 1),
+    ('Review the next training block', TIMESTAMP(DATE_ADD(CURRENT_DATE, INTERVAL 2 DAY), '14:00:00'), 2, 2);
+
+INSERT INTO nutrition_entries (`date`, calories, protein, carbs, fat, notes, athlete_ref) VALUES
+    (DATE_SUB(CURRENT_DATE, INTERVAL 2 DAY), 2330, 115, 310, 70, 'Interval training', 1),
+    (DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY), 2190, 110, 275, 72, 'Recovery session', 1),
+    (CURRENT_DATE, 2450, 120, 330, 72, 'Long run', 1),
+    (CURRENT_DATE, 2845, 150, 325, 105, 'Strength session', 2);
+
+INSERT INTO users (username, password, role, athlete_profile_id, coach_profile_id) VALUES
+    ('exam_admin', '__EXAM_DEMO_BCRYPT_HASH__', 'ADMIN', NULL, NULL),
+    ('exam_coach', '__EXAM_DEMO_BCRYPT_HASH__', 'COACH', NULL, 1),
+    ('exam_athlete', '__EXAM_DEMO_BCRYPT_HASH__', 'ATHLETE', 1, NULL);
+
+COMMIT;

@@ -5,12 +5,13 @@ import com.eman.tracker.olympicnutritiontracker.repository.AthleteRepository;
 import com.eman.tracker.olympicnutritiontracker.service.AthleteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@BackendIntegrationTest
+@WithMockUser(roles = "ADMIN")
 @Transactional
 class AthleteServiceTest {
 

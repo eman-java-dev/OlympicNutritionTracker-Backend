@@ -21,37 +21,57 @@ public class NutritionEntryController {
         this.service = service;
     }
 
+    // جميع الأدوار يمكنها عرض البيانات الغذائية
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','COACH')")
+    @PreAuthorize("hasAnyRole('ADMIN','COACH','ATHLETE')")
     public Page<NutritionEntryResponse> list(Pageable pageable) {
-        return service.list(pageable).map(NutritionEntryMapper::toResponse);
+        return service.list(pageable)
+                .map(NutritionEntryMapper::toResponse);
     }
 
+    // عرض البيانات الخاصة برياضي معين
     @GetMapping(params = "athleteId")
     @PreAuthorize("hasAnyRole('ADMIN','COACH','ATHLETE')")
-    public Page<NutritionEntryResponse> listByAthlete(@RequestParam Long athleteId, Pageable pageable) {
-        return service.listByAthlete(athleteId, pageable).map(NutritionEntryMapper::toResponse);
+    public Page<NutritionEntryResponse> listByAthlete(
+            @RequestParam Long athleteId,
+            Pageable pageable
+    ) {
+        return service.listByAthlete(athleteId, pageable)
+                .map(NutritionEntryMapper::toResponse);
     }
 
+    // جميع الأدوار يمكنها عرض سجل واحد
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','COACH','ATHLETE')")
     public NutritionEntryResponse get(@PathVariable Long id) {
         return NutritionEntryMapper.toResponse(service.get(id));
     }
 
+    // الإدمن والكوتش يمكنهما الإضافة
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','COACH')")
     @ResponseStatus(HttpStatus.CREATED)
-    public NutritionEntryResponse create(@RequestBody @Valid NutritionEntryRequest req) {
-        return NutritionEntryMapper.toResponse(service.create(req));
+    public NutritionEntryResponse create(
+            @Valid @RequestBody NutritionEntryRequest request
+    ) {
+        return NutritionEntryMapper.toResponse(
+                service.create(request)
+        );
     }
 
+    // الإدمن والكوتش يمكنهما التعديل
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','COACH')")
-    public NutritionEntryResponse update(@PathVariable Long id, @RequestBody @Valid NutritionEntryRequest req) {
-        return NutritionEntryMapper.toResponse(service.update(id, req));
+    public NutritionEntryResponse update(
+            @PathVariable Long id,
+            @Valid @RequestBody NutritionEntryRequest request
+    ) {
+        return NutritionEntryMapper.toResponse(
+                service.update(id, request)
+        );
     }
 
+    // الإدمن فقط يمكنه الحذف
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)

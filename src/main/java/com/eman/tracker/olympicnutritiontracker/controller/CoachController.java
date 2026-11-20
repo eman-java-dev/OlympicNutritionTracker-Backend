@@ -1,12 +1,16 @@
 package com.eman.tracker.olympicnutritiontracker.controller;
 
-// نفس imports الموجودة عندك
 import com.eman.tracker.olympicnutritiontracker.model.Coach;
 import com.eman.tracker.olympicnutritiontracker.service.CoachService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
-import org.springframework.data.domain.*;
-import org.springframework.http.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,35 +26,63 @@ public class CoachController {
         this.coachService = coachService;
     }
 
+    // جميع الأدوار يمكنها عرض قائمة الكوتشات
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','COACH')")
-    public Page<Coach> list(@RequestParam(required = false) String search, Pageable pageable) {
+    @PreAuthorize("hasAnyRole('ADMIN','COACH','ATHLETE')")
+    public Page<Coach> list(
+            @RequestParam(required = false) String search,
+            Pageable pageable
+    ) {
         if (search != null && !search.isBlank()) {
-            List<Coach> found = coachService.searchByName(search);
-            return new PageImpl<>(found, pageable, found.size());
+            List<Coach> result = coachService.searchByName(search);
+
+            return new PageImpl<>(
+                    result,
+                    pageable,
+                    result.size()
+            );
         }
+
         return coachService.list(pageable);
     }
 
+    // جميع الأدوار يمكنها عرض Coach واحد
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','COACH')")
+    @PreAuthorize("hasAnyRole('ADMIN','COACH','ATHLETE')")
     public Coach getById(@PathVariable Long id) {
         return coachService.getById(id);
     }
 
+    // الإدمن فقط يمكنه إنشاء Coach
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
-    public Coach create(@Valid @RequestBody CoachRequest req) {
-        return coachService.create(req.getName(), req.getSpecialty(), req.getEmail(), req.getPhone());
+    public Coach create(@Valid @RequestBody CoachRequest request) {
+        return coachService.create(
+                request.getName(),
+                request.getSpecialty(),
+                request.getEmail(),
+                request.getPhone()
+        );
     }
 
+    // الإدمن فقط يمكنه تعديل Coach
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Coach update(@PathVariable Long id, @Valid @RequestBody CoachRequest req) {
-        return coachService.update(id, req.getName(), req.getSpecialty(), req.getEmail(), req.getPhone());
+    public Coach update(
+            @PathVariable Long id,
+            @Valid @RequestBody CoachRequest request
+    ) {
+        return coachService.update(
+                id,
+                request.getName(),
+                request.getSpecialty(),
+                request.getEmail(),
+                request.getPhone()
+        );
     }
 
+    // الإدمن فقط يمكنه حذف Coach
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -58,55 +90,95 @@ public class CoachController {
         coachService.delete(id);
     }
 
+    // جميع الأدوار يمكنها رؤية الرياضيين المرتبطين بـ Coach
     @GetMapping("/{coachId}/athletes")
-    @PreAuthorize("hasAnyRole('ADMIN','COACH')")
-    public ResponseEntity<List<AthleteResponse>> getAthletesByCoach(@PathVariable Long coachId) {
-        List<AthleteResponse> out = coachService.getAthletesByCoach(coachId)
+    @PreAuthorize("hasAnyRole('ADMIN','COACH','ATHLETE')")
+    public ResponseEntity<List<AthleteResponse>> getAthletesByCoach(
+            @PathVariable Long coachId
+    ) {
+        List<AthleteResponse> response = coachService
+                .getAthletesByCoach(coachId)
                 .stream()
-                .map(a -> {
-                    AthleteResponse r = new AthleteResponse();
-                    r.setId(a.getId());
-                    r.setName(a.getName());
-                    r.setAge(a.getAge());
-                    r.setGender(a.getGender());
-                    r.setHeight(a.getHeight());
-                    r.setWeight(a.getWeight());
-                    return r;
+                .map(athlete -> {
+                    AthleteResponse dto = new AthleteResponse();
+
+                    dto.setId(athlete.getId());
+                    dto.setName(athlete.getName());
+                    dto.setAge(athlete.getAge());
+                    dto.setGender(athlete.getGender());
+                    dto.setHeight(athlete.getHeight());
+                    dto.setWeight(athlete.getWeight());
+
+                    return dto;
                 })
                 .toList();
 
-        return ResponseEntity.ok(out);
+        return ResponseEntity.ok(response);
     }
 
-    static class CoachRequest {
-        @NotBlank(message = "name is required")
-        @Size(max = 120, message = "name must be <= 120 characters")
+    public static class CoachRequest {
+
+        @NotBlank(message = "Le nom est obligatoire")
+        @Size(
+                max = 120,
+                message = "Le nom ne doit pas dépasser 120 caractères"
+        )
         private String name;
 
-        @Size(max = 120, message = "specialty must be <= 120 characters")
+        @Size(
+                max = 120,
+                message = "La spécialité ne doit pas dépasser 120 caractères"
+        )
         private String specialty;
 
-        @Email(message = "email must be valid")
-        @Size(max = 160, message = "email must be <= 160 characters")
+        @Email(message = "L'adresse e-mail n'est pas valide")
+        @Size(
+                max = 160,
+                message = "L'adresse e-mail ne doit pas dépasser 160 caractères"
+        )
         private String email;
 
-        @Size(max = 40, message = "phone must be <= 40 characters")
+        @Size(
+                max = 40,
+                message = "Le numéro de téléphone ne doit pas dépasser 40 caractères"
+        )
         private String phone;
 
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public String getName() {
+            return name;
+        }
 
-        public String getSpecialty() { return specialty; }
-        public void setSpecialty(String specialty) { this.specialty = specialty; }
+        public void setName(String name) {
+            this.name = name;
+        }
 
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
+        public String getSpecialty() {
+            return specialty;
+        }
 
-        public String getPhone() { return phone; }
-        public void setPhone(String phone) { this.phone = phone; }
+        public void setSpecialty(String specialty) {
+            this.specialty = specialty;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public String getPhone() {
+            return phone;
+        }
+
+        public void setPhone(String phone) {
+            this.phone = phone;
+        }
     }
 
-    static class AthleteResponse {
+    public static class AthleteResponse {
+
         private Long id;
         private String name;
         private Integer age;
@@ -114,22 +186,52 @@ public class CoachController {
         private Double height;
         private Double weight;
 
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
+        public Long getId() {
+            return id;
+        }
 
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public void setId(Long id) {
+            this.id = id;
+        }
 
-        public Integer getAge() { return age; }
-        public void setAge(Integer age) { this.age = age; }
+        public String getName() {
+            return name;
+        }
 
-        public String getGender() { return gender; }
-        public void setGender(String gender) { this.gender = gender; }
+        public void setName(String name) {
+            this.name = name;
+        }
 
-        public Double getHeight() { return height; }
-        public void setHeight(Double height) { this.height = height; }
+        public Integer getAge() {
+            return age;
+        }
 
-        public Double getWeight() { return weight; }
-        public void setWeight(Double weight) { this.weight = weight; }
+        public void setAge(Integer age) {
+            this.age = age;
+        }
+
+        public String getGender() {
+            return gender;
+        }
+
+        public void setGender(String gender) {
+            this.gender = gender;
+        }
+
+        public Double getHeight() {
+            return height;
+        }
+
+        public void setHeight(Double height) {
+            this.height = height;
+        }
+
+        public Double getWeight() {
+            return weight;
+        }
+
+        public void setWeight(Double weight) {
+            this.weight = weight;
+        }
     }
 }

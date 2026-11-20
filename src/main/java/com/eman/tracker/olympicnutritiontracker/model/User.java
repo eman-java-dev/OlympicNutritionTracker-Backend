@@ -25,4 +25,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @Column(name = "athlete_profile_id", unique = true)
+    private Long athleteProfileId;
+
+    @Column(name = "coach_profile_id", unique = true)
+    private Long coachProfileId;
 }

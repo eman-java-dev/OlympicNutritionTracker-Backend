@@ -24,7 +24,8 @@ public class ConsultationController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','COACH','ATHLETE')")
     public Page<ConsultationResponse> list(Pageable pageable) {
-        return service.list(pageable).map(ConsultationMapper::toResponse);
+        return service.list(pageable)
+                .map(ConsultationMapper::toResponse);
     }
 
     @GetMapping("/{id}")
@@ -36,15 +37,23 @@ public class ConsultationController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','COACH')")
     @ResponseStatus(HttpStatus.CREATED)
-    public ConsultationResponse create(@Valid @RequestBody ConsultationRequest req) {
-        return ConsultationMapper.toResponse(service.create(req));
+    public ConsultationResponse create(
+            @Valid @RequestBody ConsultationRequest request
+    ) {
+        return ConsultationMapper.toResponse(
+                service.create(request)
+        );
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','COACH')")
-    public ConsultationResponse update(@PathVariable Long id,
-                                       @Valid @RequestBody ConsultationRequest req) {
-        return ConsultationMapper.toResponse(service.update(id, req));
+    public ConsultationResponse update(
+            @PathVariable Long id,
+            @Valid @RequestBody ConsultationRequest request
+    ) {
+        return ConsultationMapper.toResponse(
+                service.update(id, request)
+        );
     }
 
     @DeleteMapping("/{id}")

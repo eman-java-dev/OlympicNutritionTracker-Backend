@@ -54,26 +54,23 @@ Authorization: Bearer <JWT_TOKEN>
 - Full CRUD on Coaches
 - Full CRUD on Consultations
 - Full CRUD on Nutrition Entries
-- User management
+- Privileged account provisioning is handled by a trusted database operator.
 
 ---
 
 ## COACH
 
-- View Athletes
-- View Coaches
-- Create Consultations
-- Update Consultations
-- Create Nutrition Entries
-- Update Nutrition Entries
+- View assigned athletes and the coach directory
+- View and manage nutrition entries for assigned athletes
+- View, create, and update their own consultations for assigned athletes
 
 ---
 
 ## ATHLETE
 
-- View Consultations
-- View Nutrition Entries
-- Cannot create, update or delete protected resources
+- View their linked athlete profile, consultations, and nutrition entries
+- View the coach directory
+- Public registration creates an ATHLETE account. A trusted operator must link it to a verified profile before it can read athlete records.
 
 ---
 
@@ -224,22 +221,20 @@ JUnit 5 was used for service layer testing.
 Clone the repository
 
 ```bash
-git clone https://github.com/eman-java-dev/OlympicNutritionTracker.git
+git clone https://github.com/eman-java-dev/OlympicNutritionTracker-Backend.git
 ```
 
 Open the project using IntelliJ IDEA.
 
-Configure MySQL in:
-
-```text
-src/main/resources/application.properties
-```
+Set `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, and `JWT_SECRET` in the process environment or in your IDE's run configuration. Store credentials outside the repository. The signing secret is standard Base64 for at least 32 random bytes. See [deployment and schema setup](deploy/README.md) for the existing-schema migration and the production configuration.
 
 Run the application:
 
 ```bash
 mvn spring-boot:run
 ```
+
+Run the build and tests with `mvn verify` or `./mvnw verify` (`mvnw.cmd verify` on Windows). The integration tests use embedded H2 and keep the application database out of the test run.
 
 ---
 

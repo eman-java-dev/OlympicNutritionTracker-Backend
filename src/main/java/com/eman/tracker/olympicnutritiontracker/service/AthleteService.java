@@ -5,28 +5,34 @@ import com.eman.tracker.olympicnutritiontracker.model.Athlete;
 import com.eman.tracker.olympicnutritiontracker.model.Coach;
 import com.eman.tracker.olympicnutritiontracker.repository.AthleteRepository;
 import com.eman.tracker.olympicnutritiontracker.repository.CoachRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AthleteService {
 
     private final AthleteRepository repo;
     private final CoachRepository coaches;
+    private final RecordAccess recordAccess;
 
-    public AthleteService(AthleteRepository repo, CoachRepository coaches) {
+    public AthleteService(AthleteRepository repo, CoachRepository coaches, RecordAccess recordAccess) {
         this.repo = repo;
         this.coaches = coaches;
+        this.recordAccess = recordAccess;
     }
 
     public Page<Athlete> list(Pageable pageable) {
-        return repo.findAll(pageable);
+        return repo.findAll(recordAccess.current().athletes(), pageable);
     }
 
     public Athlete get(Long id) {
-        return repo.findById(id)
+        return repo.findOne(recordAccess.current().athletes()
+                        .and((root, query, builder) -> builder.equal(root.get("id"), id)))
                 .orElseThrow(() -> new ResourceNotFoundException("Athlete not found with id: " + id));
     }
 
@@ -63,6 +69,13 @@ public class AthleteService {
         if (!repo.existsById(id)) {
             throw new ResourceNotFoundException("Athlete not found with id: " + id);
         }
-        repo.deleteById(id);
+        try {
+            repo.deleteById(id);
+            repo.flush();
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This athlete cannot be deleted because existing records, such as consultations or nutrition entries, are linked to them.",
+                    ex);
+        }
     }
 }

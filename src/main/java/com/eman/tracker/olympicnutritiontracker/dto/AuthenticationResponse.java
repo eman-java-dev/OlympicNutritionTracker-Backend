@@ -1,3 +1,4 @@
+
 package com.eman.tracker.olympicnutritiontracker.dto;
 
 import lombok.*;
@@ -10,4 +11,6 @@ import lombok.*;
 public class AuthenticationResponse {
 
     private String token;
+    private String username;
+    private String role;
 }

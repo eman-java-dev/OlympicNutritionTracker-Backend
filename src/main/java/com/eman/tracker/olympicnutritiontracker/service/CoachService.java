@@ -19,15 +19,18 @@ public class CoachService {
     private final CoachRepository coaches;
     private final AthleteRepository athletes;
     private final ConsultationRepository consultations;
+    private final RecordAccess recordAccess;
 
     public CoachService(
             CoachRepository coaches,
             AthleteRepository athletes,
-            ConsultationRepository consultations
+            ConsultationRepository consultations,
+            RecordAccess recordAccess
     ) {
         this.coaches = coaches;
         this.athletes = athletes;
         this.consultations = consultations;
+        this.recordAccess = recordAccess;
     }
 
     public Page<Coach> list(Pageable pageable) {
@@ -93,6 +96,7 @@ public class CoachService {
         coaches.findById(coachId)
                 .orElseThrow(() -> new ResourceNotFoundException("Coach not found with id: " + coachId));
 
-        return athletes.findByCoach_Id(coachId);
+        return athletes.findAll(recordAccess.current().athletes()
+                .and((root, query, builder) -> builder.equal(root.get("coach").get("id"), coachId)));
     }
 }

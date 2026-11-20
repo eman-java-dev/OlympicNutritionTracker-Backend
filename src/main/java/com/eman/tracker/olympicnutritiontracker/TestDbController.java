@@ -1,10 +1,16 @@
 package com.eman.tracker.olympicnutritiontracker;
 
+import org.springframework.context.annotation.Profile;
+import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Profile("!prod")
 @RestController
 @RequestMapping("/api")
 public class TestDbController {
@@ -16,16 +22,15 @@ public class TestDbController {
     }
 
     @GetMapping("/db-check")
-    public String checkDatabaseConnection() {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> checkDatabaseConnection() {
         try {
-            Integer one = jdbc.queryForObject("SELECT 1", Integer.class);
-            if (one != null && one == 1) {
-                return "✅ Connexion réussie à la base de données Olympic Nutrition Tracker !";
-            } else {
-                return "⚠️ Connexion établie, mais réponse inattendue.";
+            if (Integer.valueOf(1).equals(jdbc.queryForObject("SELECT 1", Integer.class))) {
+                return ResponseEntity.ok("Database connection available");
             }
-        } catch (Exception e) {
-            return "❌ Erreur de connexion : " + e.getMessage();
+        } catch (DataAccessException ex) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Database connection unavailable");
         }
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Database connection unavailable");
     }
 }

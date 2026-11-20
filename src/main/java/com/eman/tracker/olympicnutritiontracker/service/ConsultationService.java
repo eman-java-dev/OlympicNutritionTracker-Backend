@@ -10,6 +10,7 @@ import com.eman.tracker.olympicnutritiontracker.repository.CoachRepository;
 import com.eman.tracker.olympicnutritiontracker.repository.ConsultationRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,21 +20,24 @@ public class ConsultationService {
     private final ConsultationRepository consultations;
     private final AthleteRepository athletes;
     private final CoachRepository coaches;
+    private final RecordAccess recordAccess;
 
     public ConsultationService(ConsultationRepository consultations,
                                AthleteRepository athletes,
-                               CoachRepository coaches) {
+                               CoachRepository coaches, RecordAccess recordAccess) {
         this.consultations = consultations;
         this.athletes = athletes;
         this.coaches = coaches;
+        this.recordAccess = recordAccess;
     }
 
     public Page<Consultation> list(Pageable pageable) {
-        return consultations.findAll(pageable);
+        return consultations.findAll(recordAccess.current().consultations(), pageable);
     }
 
     public Consultation get(Long id) {
-        return consultations.findById(id)
+        return consultations.findOne(recordAccess.current().consultations()
+                        .and((root, query, builder) -> builder.equal(root.get("id"), id)))
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Consultation not found with id: " + id));
     }
@@ -47,6 +51,8 @@ public class ConsultationService {
         Coach coach = coaches.findById(req.getCoachId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Coach not found with id: " + req.getCoachId()));
+
+        requireWriteAccess(athlete, coach.getId());
 
         Consultation c = new Consultation();
         c.setMessage(req.getMessage());
@@ -69,12 +75,21 @@ public class ConsultationService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Coach not found with id: " + req.getCoachId()));
 
+        requireWriteAccess(athlete, coach.getId());
+
         existing.setMessage(req.getMessage());
         existing.setScheduledAt(req.getScheduledAt());
         existing.setAthlete(athlete);
         existing.setCoach(coach);
 
         return consultations.save(existing);
+    }
+
+    private void requireWriteAccess(Athlete athlete, Long coachId) {
+        RecordAccess.Scope scope = recordAccess.current();
+        if (!scope.canWriteFor(athlete) || !scope.canWriteAs(coachId)) {
+            throw new AccessDeniedException("Consultation is outside the coach's assignment");
+        }
     }
 
     @Transactional
