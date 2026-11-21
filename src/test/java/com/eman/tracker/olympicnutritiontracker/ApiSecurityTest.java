@@ -98,13 +98,15 @@ class ApiSecurityTest {
     }
 
     @Test
-    void healthAllowsOnlyGetOnTheExactPathWithoutAuthentication() throws Exception {
-        mvc.perform(get("/health"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(""));
-        mvc.perform(head("/health")).andExpect(status().isUnauthorized());
-        mvc.perform(post("/health")).andExpect(status().isUnauthorized());
-        mvc.perform(get("/health/details")).andExpect(status().isUnauthorized());
+    void healthAllowsAnonymousGetOnlyOnTheExactPaths() throws Exception {
+        for (String path : new String[]{"/health", "/healthz"}) {
+            mvc.perform(get(path))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(""));
+            mvc.perform(head(path)).andExpect(status().isUnauthorized());
+            mvc.perform(post(path)).andExpect(status().isUnauthorized());
+            mvc.perform(get(path + "/details")).andExpect(status().isUnauthorized());
+        }
     }
 
     @Test
