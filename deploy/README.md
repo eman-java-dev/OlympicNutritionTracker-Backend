@@ -3,10 +3,23 @@
 ## Prepare MySQL
 
 1. Back up the existing MySQL database. For a new Railway database, restore a verified export containing the existing application schema and records. The application validates the schema at startup.
-2. Before the first startup of this version, review and run [the account profile migration](add-account-profile-links.sql) once against the target database. It adds nullable links, unique constraints, and foreign keys. Existing accounts, profiles, and records remain in place. Use a separate schema-management account for the migration.
+2. Compare the target schema against the application on a staging copy. If both `users.athlete_profile_id` and `users.coach_profile_id` and their constraints are missing from an older schema, review and apply [the account profile migration](add-account-profile-links.sql) once with a separate schema-management account. Skip it when already applied. If only some of the objects exist, review the differences before applying any DDL. A clean Railway MySQL instance needs a full application schema first. Hibernate uses `ddl-auto=validate`, Spring SQL initialization is disabled, and there is no automatic migration runner.
 3. For each verified ATHLETE or COACH account, set the corresponding `users.athlete_profile_id` or `users.coach_profile_id` to the confirmed profile ID. Check the account's stored role and profile independently before linking them. Leave unverified accounts unlinked. ADMIN accounts need neither link. Confirm that existing ADMIN and COACH accounts were provisioned by a trusted operator before granting production access.
 4. Rotate any values previously stored in source or Git history. Set a new signing key and replace any exposed MySQL credentials. Existing sessions must sign in again after the signing key changes.
-5. In Railway, enable a public TCP proxy for MySQL and copy its external host and port. Configure MySQL TLS with a certificate that matches the hostname used by Render and a CA trusted by the Java runtime. For a private CA, provision a truststore and supply it to Connector/J through its truststore settings. The production profile uses `VERIFY_IDENTITY`. [Railway MySQL](https://docs.railway.com/databases/mysql) · [Connector/J server authentication](https://dev.mysql.com/doc/connector-j/en/connector-j-server-authentication.html)
+5. Enable a Railway public TCP proxy targeting MySQL's internal port (normally `3306`). Use its assigned public port from Render. Configure a DNS-only CNAME such as `db.example.com` to the TCP proxy hostname if you need a stable name for the certificate. Use that same DNS name in the MySQL server certificate's DNS SAN and in Render. The TCP proxy forwards the MySQL protocol, so configure TLS on MySQL itself. [Railway TCP Proxy](https://docs.railway.com/networking/tcp-proxy)
+6. On the Railway MySQL service, configure `ssl_ca`, `ssl_cert`, and `ssl_key` under `[mysqld]` using files accessible to MySQL. Supply any intermediate certificates needed to build the server's chain. Keep the server key on Railway. When all MySQL clients are ready for TLS, set `require_secure_transport=ON`. Preserve the service's existing data volume when changing its configuration or image. MySQL's automatically generated certificate does not identify the public proxy hostname. [MySQL TLS configuration](https://dev.mysql.com/doc/refman/8.4/en/using-encrypted-connections.html)
+
+### Private CA truststore
+
+Obtain the MySQL CA certificate through a trusted operator channel and verify its fingerprint before importing it. Prepare a PKCS12 truststore containing the CA certificate and no private keys. The commands below are for a POSIX shell. The first command prompts for the truststore password.
+
+```sh
+keytool -importcert -alias railway-mysql-ca -file railway-mysql-ca.pem \
+  -storetype PKCS12 -keystore railway-mysql-ca.p12
+base64 < railway-mysql-ca.p12 | tr -d '\r\n'
+```
+
+Paste the single-line result into Render's `MYSQL_TLS_TRUST_STORE_BASE64`. Supply the same password through `MYSQL_TLS_TRUST_STORE_PASSWORD`. At runtime the container decodes the truststore into a private temporary file and configures Connector/J to use it. When MySQL presents a certificate chained to a CA already trusted by Java, omit both variables. In either case Connector/J uses `VERIFY_IDENTITY`. [Connector/J server authentication](https://dev.mysql.com/doc/connector-j/en/connector-j-server-authentication.html)
 
 ## Configure Render
 
@@ -15,13 +28,25 @@ Create a Docker web service rooted at this backend directory, using the included
 | Environment variable | Value |
 | --- | --- |
 | `SPRING_PROFILES_ACTIVE` | `prod`, already set by the Dockerfile |
-| `SPRING_DATASOURCE_URL` | `jdbc:mysql://PUBLIC_TCP_HOST:PUBLIC_TCP_PORT/DATABASE` using the verified external hostname and port |
+| `MYSQL_HOST` | External DNS hostname that matches the MySQL server certificate, for example `db.example.com` |
+| `MYSQL_PORT` | Railway's assigned **public TCP proxy port** |
+| `MYSQL_DATABASE` | Name of the migrated application schema |
+| `MYSQL_TLS_TRUST_STORE_BASE64` | Single-line base64 of the PKCS12 CA truststore for a private CA |
+| `MYSQL_TLS_TRUST_STORE_PASSWORD` | Password of that truststore for a private CA |
 | `SPRING_DATASOURCE_USERNAME` | Dedicated MySQL application account with data access to the application schema |
 | `SPRING_DATASOURCE_PASSWORD` | Password for that account, entered as a runtime secret |
 | `JWT_SECRET` | Base64 encoding of at least 32 cryptographically random bytes, entered as a runtime secret |
 | `JWT_EXPIRATION_MS` | Optional token lifetime in milliseconds, defaults to 24 hours |
 | `CORS_ALLOWED_ORIGINS` | Exact Angular HTTPS origin, or comma-separated origins, with scheme and optional port |
 
-Keep credentials out of the JDBC URL, Docker build arguments, and build logs. Production disables Swagger and the database diagnostic route. [Render Docker environment variables](https://render.com/docs/docker#environment-variable-translation)
+Remove any old `SPRING_DATASOURCE_URL` or `SPRING_DATASOURCE_HIKARI_JDBC_URL` from the Render service and its linked environment groups so the production profile builds the JDBC URL from `MYSQL_HOST`, `MYSQL_PORT`, and `MYSQL_DATABASE`. Keep credentials out of the JDBC URL, the Dockerfile, and logs. Production disables Swagger and the database diagnostic route. Leave **Health Check Path** blank for the default TCP probe. [Render Docker environment variables](https://render.com/docs/docker-secrets) · [Render health checks](https://render.com/docs/health-checks)
 
-Before opening production access, verify startup against a staging copy of the Railway database. Check TLS verification, a login with each role, record access between two different profiles, and the CORS preflight from the Angular origin. Login and registration return `token`, `username`, and `role` using the existing JSON field names.
+Before opening production access, verify startup against a staging copy of the Railway database. For an independent, read-only TLS check with a private CA, run:
+
+```sh
+mysql --host=db.example.com --port=PUBLIC_TCP_PORT --user=APP_USER --password \
+  --ssl-mode=VERIFY_IDENTITY --ssl-ca=railway-mysql-ca.pem --database=APP_DATABASE \
+  --execute="SELECT 1; SHOW SESSION STATUS LIKE 'Ssl_cipher';"
+```
+
+After deploying on Render, verify that the logs show a successful database pool connection and completed Spring Boot startup, including Hibernate schema validation. Check a login with each role, record access between two different profiles, and the CORS preflight from the Angular origin. Login and registration return `token`, `username`, and `role` using the existing JSON field names.
