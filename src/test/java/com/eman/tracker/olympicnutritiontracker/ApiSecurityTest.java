@@ -98,6 +98,16 @@ class ApiSecurityTest {
     }
 
     @Test
+    void healthAllowsOnlyGetOnTheExactPathWithoutAuthentication() throws Exception {
+        mvc.perform(get("/health"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
+        mvc.perform(head("/health")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/health")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/health/details")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void protectedRoutesRejectMissingInvalidAndDeletedAccountTokens() throws Exception {
         mvc.perform(get("/api/athletes")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/athletes").header(HttpHeaders.AUTHORIZATION, "Bearer invalid"))

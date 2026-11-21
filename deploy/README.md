@@ -38,7 +38,7 @@ Create a Docker web service rooted at this backend directory, using the included
 | `JWT_EXPIRATION_MS` | Optional token lifetime in milliseconds, defaults to 24 hours |
 | `CORS_ALLOWED_ORIGINS` | Exact Angular HTTPS origin, or comma-separated origins, with scheme and optional port |
 
-Remove any old `SPRING_DATASOURCE_URL` or `SPRING_DATASOURCE_HIKARI_JDBC_URL` from the Render service and its linked environment groups so the production profile builds the JDBC URL from `MYSQL_HOST`, `MYSQL_PORT`, and `MYSQL_DATABASE`. Keep credentials out of the JDBC URL, the Dockerfile, and logs. Production disables Swagger and the database diagnostic route. Leave **Health Check Path** blank for the default TCP probe. [Render Docker environment variables](https://render.com/docs/docker-secrets) · [Render health checks](https://render.com/docs/health-checks)
+Remove any old `SPRING_DATASOURCE_URL` or `SPRING_DATASOURCE_HIKARI_JDBC_URL` from the Render service and its linked environment groups so the production profile builds the JDBC URL from `MYSQL_HOST`, `MYSQL_PORT`, and `MYSQL_DATABASE`. Keep credentials out of the JDBC URL, the Dockerfile, and logs. Production disables Swagger and the database diagnostic route. Set **Health Check Path** to `/health` to enable an HTTP probe. [Render Docker environment variables](https://render.com/docs/docker-secrets) · [Render health checks](https://render.com/docs/health-checks)
 
 Before opening production access, verify startup against a staging copy of the Railway database. For an independent, read-only TLS check with a private CA, run:
 
