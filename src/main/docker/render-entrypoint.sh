@@ -13,7 +13,6 @@ if [ -n "${MYSQL_TLS_TRUST_STORE_BASE64:-}" ]; then
         exit 1
     fi
     export MYSQL_TLS_TRUST_STORE_URL="file:$trust_store"
-    export MYSQL_TLS_FALLBACK_TO_SYSTEM_TRUST_STORE=false
     unset MYSQL_TLS_TRUST_STORE_BASE64
 fi
 
