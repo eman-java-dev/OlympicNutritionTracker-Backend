@@ -23,7 +23,7 @@ The API uses Java 21, Spring Boot 4.1.2, Spring Security 7.1.2, and Spring Data 
 
 Send `username` and `password` to `POST /api/auth/login`. On success the API returns `token`, `username`, and `role`. For protected requests, send `Authorization: Bearer <token>`. Spring Security validates the token’s signature and expiry and reloads the account and its authorities from the database on each authenticated request.
 
-Public registration always creates an `ATHLETE` account. Privileged accounts and athlete or coach profile links are provisioned by a trusted operator. An unlinked account has no athlete-scoped records.
+Public registration always creates an `ATHLETE` account. A trusted operator provisions privileged accounts and links accounts to their profiles. `ATHLETE` accounts require a matching athlete profile link to access athlete-scoped records. `COACH` accounts require a matching coach profile link to access the records of their assigned athletes. `ADMIN` access requires no profile link.
 
 | Role | Access |
 | --- | --- |
@@ -70,7 +70,7 @@ Start the API from the repository root:
 .\mvnw.cmd spring-boot:run
 ```
 
-On macOS or Linux, use `./mvnw spring-boot:run`. Follow the [frontend installation instructions](https://github.com/eman-java-dev/olympic-nutrition-tracker-frontend) to start Angular.
+On macOS or Linux, use `sh ./mvnw spring-boot:run`. The shell reads the wrapper directly, so this works with the non-executable permissions Git currently tracks for `mvnw`. Follow the [frontend installation instructions](https://github.com/eman-java-dev/olympic-nutrition-tracker-frontend) to start Angular.
 
 ## Tests
 
@@ -78,7 +78,7 @@ On macOS or Linux, use `./mvnw spring-boot:run`. Follow the [frontend installati
 .\mvnw.cmd verify
 ```
 
-On macOS or Linux, use `./mvnw verify`. The suite covers service operations, consultation HTTP mappings, context startup, registration and login, bearer-token rejection, role and record-level access, and the Angular CORS preflight. Integration tests use embedded H2 and synthetic records. They do not exercise the Railway database or validate the deployment’s TLS configuration.
+On macOS or Linux, use `sh ./mvnw verify`. The suite covers service operations, consultation HTTP mappings, context startup, registration and login, bearer-token rejection, role and record-level access, and the Angular CORS preflight. Integration tests use embedded H2 and synthetic records. The 23 November 2026 audit reported 20 passing tests at `58443be` and 21 at `7380bcd`, with zero failures, errors, or skipped tests in both runs. These historical results cover the local suites. Authenticated production workflows and the live MySQL certificate hostname were outside their scope.
 
 ## Render and Railway
 
