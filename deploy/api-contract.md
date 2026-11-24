@@ -14,7 +14,7 @@
 | Consultation create/update | Allowed | Own coach profile and assigned athletes | Denied |
 | Consultation delete | Allowed | Denied | Denied |
 
-Anonymous resource requests are denied. An unlinked profile has an empty scope. Direct IDs are resolved within the caller's scope and a coach write checks the target athlete before any mutation. The directory remains available for authenticated unlinked accounts. A request uses the database role fetched during token authentication. Overlap between in-flight record writes and reassignment remains an open concurrency test.
+Anonymous resource requests are denied. An unlinked profile has an empty scope. Direct IDs are resolved within the caller's scope and a coach write checks the target athlete before any mutation. The directory remains available for authenticated unlinked accounts. A request uses the database role fetched during token authentication. A write that reaches its record-scope check after a committed reassignment must use the new scope. The regression pauses an in-flight coach request before that check and verifies that its record stays unchanged. Concurrent writes that have already passed the scope check remain outside this proof.
 
 | Request | Field contract |
 | --- | --- |

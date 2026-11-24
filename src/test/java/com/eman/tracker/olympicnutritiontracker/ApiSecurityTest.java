@@ -13,6 +13,7 @@ import com.eman.tracker.olympicnutritiontracker.repository.ConsultationRepositor
 import com.eman.tracker.olympicnutritiontracker.repository.NutritionEntryRepository;
 import com.eman.tracker.olympicnutritiontracker.repository.UserRepository;
 import com.eman.tracker.olympicnutritiontracker.service.CustomUserDetailsService;
+import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -21,13 +22,20 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.web.context.WebApplicationContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -37,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ApiSecurityTest {
 
     @Autowired MockMvc mvc;
+    @Autowired WebApplicationContext webContext;
     @Autowired UserRepository users;
     @Autowired CoachRepository coaches;
     @Autowired AthleteRepository athletes;
@@ -337,6 +346,58 @@ class ApiSecurityTest {
         mvc.perform(get("/api/db-check").header(HttpHeaders.AUTHORIZATION, adminBearer))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void coachWriteWaitingBeforeRecordAccessSeesCommittedReassignment() throws Exception {
+        Coach original = coach("Transition original");
+        Coach replacement = coach("Transition replacement");
+        Athlete athlete = athlete("Transition athlete", original);
+        NutritionEntry entry = entry(athlete);
+        User oldCoach = account("transition-coach", Role.COACH, null, original.getId());
+        User admin = account("transition-admin", Role.ADMIN, null, null);
+        var waiting = new CountDownLatch(1);
+        var proceed = new CountDownLatch(1);
+        MockMvc pausedMvc = MockMvcBuilders.webAppContextSetup(webContext)
+                .apply(springSecurity())
+                .addFilters((request, response, chain) -> {
+                    waiting.countDown();
+                    try {
+                        if (!proceed.await(10, TimeUnit.SECONDS)) {
+                            throw new ServletException("Timed out waiting for reassignment");
+                        }
+                    } catch (InterruptedException error) {
+                        Thread.currentThread().interrupt();
+                        throw new ServletException(error);
+                    }
+                    chain.doFilter(request, response);
+                }).build();
+
+        try (var pool = Executors.newSingleThreadExecutor()) {
+            String oldToken = bearer(oldCoach.getUsername());
+            var write = pool.submit(() -> pausedMvc.perform(put("/api/nutrition-entries/{id}", entry.getId())
+                    .header(HttpHeaders.AUTHORIZATION, oldToken)
+                    .contentType(MediaType.APPLICATION_JSON).content(entryRequest(athlete)))
+                    .andReturn().getResponse().getStatus());
+            try {
+                assertThat(waiting.await(10, TimeUnit.SECONDS)).isTrue();
+                mvc.perform(put("/api/athletes/{athleteId}/assign-coach/{coachId}",
+                                athlete.getId(), replacement.getId())
+                                .header(HttpHeaders.AUTHORIZATION, bearer(admin.getUsername())))
+                        .andExpect(status().isOk());
+            } finally {
+                proceed.countDown();
+            }
+            assertThat(write.get(10, TimeUnit.SECONDS)).isEqualTo(404);
+            assertThat(entries.findById(entry.getId()).orElseThrow().getCalories()).isNull();
+        } finally {
+            users.deleteAllById(java.util.List.of(oldCoach.getId(), admin.getId()));
+            entries.deleteById(entry.getId());
+            athletes.deleteById(athlete.getId());
+            coaches.deleteAllById(java.util.List.of(original.getId(), replacement.getId()));
+        }
+    }
+
 
     @Test
     void corsPreflightAllowsConfiguredAngularOrigin() throws Exception {
