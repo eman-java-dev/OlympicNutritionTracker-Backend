@@ -22,6 +22,8 @@ Create a Docker web service rooted at this backend directory, using the included
 | `JWT_EXPIRATION_MS` | Optional token lifetime in milliseconds, defaults to 24 hours |
 | `CORS_ALLOWED_ORIGINS` | Exact Angular HTTPS origin, or comma-separated origins, with scheme and optional port |
 
+For a private MySQL CA, set `MYSQL_TLS_TRUST_STORE_URL` to the mounted PKCS12 file URL and set `MYSQL_TLS_TRUST_STORE_PASSWORD` through the runtime secret store. Set `MYSQL_TLS_FALLBACK_TO_SYSTEM_TRUST_STORE=false` when the reviewed trust boundary requires that store. Use a JDBC URL without TLS-override parameters. Confirm the certificate matches the actual host in that URL.
+
 Keep credentials out of the JDBC URL, Docker build arguments, and build logs. Production disables Swagger and the database diagnostic route. [Render Docker environment variables](https://render.com/docs/docker#environment-variable-translation)
 
 Before opening production access, verify startup against a staging copy of the Railway database. Check TLS verification, a login with each role, record access between two different profiles, and the CORS preflight from the Angular origin. Login and registration return `token`, `username`, and `role` using the existing JSON field names.
