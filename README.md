@@ -96,3 +96,10 @@ Railway’s TCP proxy forwards the MySQL connection. The deployment branch verif
 ## Current limits
 
 Account provisioning and profile linking require an operator. The API has no refresh-token, password-reset, or email-verification flow. MySQL integration testing, browser end-to-end coverage, and hostname verification for the deployed MySQL connection remain separate follow-up work.
+
+## Hardening checks
+
+- See the [API authorization and validation contract](deploy/api-contract.md) for role scopes, account throttling and request rules.
+- Run `./mvnw verify` with Java 21 for the H2-based service and API regression suite.
+- Use the [release operations runbook](deploy/release-operations.md) for the isolated MySQL check, deployment differences, credential containment and recovery gates.
+- Anonymous GET `/health` and `/healthz` provide liveness. `/readyz` checks database connectivity and returns an empty body. The production health path must be verified in Render.

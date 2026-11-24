@@ -49,6 +49,124 @@ class ApiSecurityTest {
     private final String testPassword = UUID.randomUUID().toString();
 
     @Test
+    void passwordPolicyAppliesOnlyToNewAccountsAndCountsUnicodeCodePoints() throws Exception {
+        String legacy = "legacy";
+        users.saveAndFlush(User.builder().username("old-policy").password(encoder.encode(legacy))
+                .role(Role.ATHLETE).build());
+        authRequest("login", "old-policy", legacy).andExpect(status().isOk());
+
+        String emoji = new String(Character.toChars(0x1f3c5));
+        authRequest("register", "short-policy", emoji.repeat(14)).andExpect(status().isBadRequest());
+        authRequest("register", "too-many-bytes", emoji.repeat(18) + "x").andExpect(status().isBadRequest());
+        authRequest("register", "exact-minimum", emoji.repeat(15)).andExpect(status().isOk());
+        authRequest("register", "exact-byte-limit", emoji.repeat(18)).andExpect(status().isOk());
+        assertThat(users.existsByUsername("short-policy")).isFalse();
+        assertThat(users.existsByUsername("too-many-bytes")).isFalse();
+    }
+
+    @Test
+    void forwardedHeadersCannotResetAccountBudget() throws Exception {
+        for (int attempt = 0; attempt < 11; attempt++) {
+            var result = mvc.perform(post("/api/auth/login")
+                    .header("Forwarded", "for=192.0.2." + attempt)
+                    .header("X-Forwarded-For", "198.51.100." + attempt + ", 203.0.113.1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                            {"username":"throttle-check","password":"incorrect"}
+                            """));
+            if (attempt < 10) {
+                result.andExpect(status().isUnauthorized());
+            } else {
+                result.andExpect(status().isTooManyRequests())
+                        .andExpect(header().exists(HttpHeaders.RETRY_AFTER));
+            }
+        }
+    }
+
+    @Test
+    void healthAliasesAreAvailableWithoutAuthentication() throws Exception {
+        mvc.perform(get("/health")).andExpect(status().isOk()).andExpect(content().string(""));
+        mvc.perform(get("/healthz")).andExpect(status().isOk()).andExpect(content().string(""));
+        mvc.perform(post("/healthz")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void invalidWritesLeaveDataUnchangedAndOptionalNutritionFieldsRemainOptional() throws Exception {
+        account("validation-admin", Role.ADMIN, null, null);
+        String token = bearer("validation-admin");
+        long athleteCount = athletes.count();
+        long entryCount = entries.count();
+        mvc.perform(post("/api/athletes").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":" ", "age":0, "gender":"12345678901","height":"Infinity"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.name").exists())
+                .andExpect(jsonPath("$.fields.age").exists())
+                .andExpect(jsonPath("$.fields.gender").exists())
+                .andExpect(jsonPath("$.fields.height").exists());
+        assertThat(athletes.count()).isEqualTo(athleteCount);
+        mvc.perform(post("/api/nutrition-entries").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"fat\":-1}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.date").exists())
+                .andExpect(jsonPath("$.fields.athleteId").exists())
+                .andExpect(jsonPath("$.fields.fat").exists());
+        assertThat(entries.count()).isEqualTo(entryCount);
+
+        Athlete athlete = new Athlete();
+        athlete.setName("Optional measures");
+        athletes.saveAndFlush(athlete);
+        mvc.perform(post("/api/nutrition-entries").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"date":"2020-01-01","athleteId":%d,"protein":0,"notes":null}
+                                """.formatted(athlete.getId())))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.protein").value(0));
+        assertThat(entries.count()).isEqualTo(entryCount + 1);
+    }
+
+    @Test
+    void currentDatabaseRoleAndCoachDirectoryApplyToIssuedTokens() throws Exception {
+        User account = account("changed-role", Role.ADMIN, null, null);
+        String token = bearer(account.getUsername());
+        account.setRole(Role.ATHLETE);
+        users.saveAndFlush(account);
+
+        mvc.perform(get("/api/coaches")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/coaches").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/athletes").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(post("/api/athletes").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Test athlete\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void readinessAndCorsExposeOnlyTheirIntendedPublicContract() throws Exception {
+        mvc.perform(get("/readyz")).andExpect(status().isOk()).andExpect(content().string(""));
+        mvc.perform(get("/health").header(HttpHeaders.ORIGIN, "http://localhost:4200"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.RETRY_AFTER));
+        mvc.perform(options("/api/athletes").header(HttpHeaders.ORIGIN, "https://example.invalid")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET"))
+                .andExpect(status().isForbidden())
+                .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
+
+
+    private org.springframework.test.web.servlet.ResultActions authRequest(String action, String username,
+                                                                          String password) throws Exception {
+        return mvc.perform(post("/api/auth/" + action).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"username":"%s","password":"%s"}
+                        """.formatted(username, password)));
+    }
+
+
+    @Test
     void registrationAlwaysStoresAnAthleteAndKeepsTheResponseContract() throws Exception {
         for (Role requestedRole : new Role[] {Role.ADMIN, Role.COACH}) {
             String username = "signup-" + requestedRole.name();

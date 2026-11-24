@@ -24,6 +24,7 @@ public class CorsConfig {
         }
         config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setExposedHeaders(List.of("Retry-After"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
 
         var source = new UrlBasedCorsConfigurationSource();
