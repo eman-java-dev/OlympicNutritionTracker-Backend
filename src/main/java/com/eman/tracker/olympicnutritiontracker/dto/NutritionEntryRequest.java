@@ -9,6 +9,7 @@ import java.time.LocalDate;
 
 public class NutritionEntryRequest {
     @NotNull
+    @MySqlDateRange
     private LocalDate date;     // yyyy-MM-dd
     @PositiveOrZero
     private Integer calories;

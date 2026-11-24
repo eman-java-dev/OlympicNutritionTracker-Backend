@@ -10,6 +10,7 @@ public class ConsultationRequest {
     private String message;
 
     @NotNull
+    @MySqlDateRange
     private LocalDateTime scheduledAt;
 
     @NotNull

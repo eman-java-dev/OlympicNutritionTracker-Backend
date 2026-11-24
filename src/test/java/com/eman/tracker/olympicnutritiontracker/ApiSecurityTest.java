@@ -113,6 +113,24 @@ class ApiSecurityTest {
                 .andExpect(jsonPath("$.fields.date").exists())
                 .andExpect(jsonPath("$.fields.athleteId").exists())
                 .andExpect(jsonPath("$.fields.fat").exists());
+        mvc.perform(post("/api/nutrition-entries").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"date":"+10000-01-01","athleteId":1,"calories":0}
+                                """))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.date").exists());
+        mvc.perform(post("/api/nutrition-entries").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"date":"2020-01-01","athleteId":1,"calories":1.5}
+                                """))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value("Invalid request body"));
+        mvc.perform(post("/api/consultations").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"scheduledAt":"0999-01-01T12:00:00","athleteId":1,"coachId":1,"message":"Fixture"}
+                                """))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.scheduledAt").exists());
         assertThat(entries.count()).isEqualTo(entryCount);
 
         Athlete athlete = new Athlete();
