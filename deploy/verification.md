@@ -1,6 +1,6 @@
 # Verification record
 
-Local or hosted candidate checks performed on 24 November 2026. See the draft PR checks for exact workflow revisions.
+This table records the prior hardening execution on 24 November 2026. See the [CI follow-up](ci-security.md) and draft PR checks for the new workflow and evidence tied to its exact head.
 
 | Plan IDs | Procedure | Result and limits |
 | --- | --- | --- |

@@ -17,7 +17,7 @@ flowchart LR
     API -->|"Connector/J over TLS"| DB
 ```
 
-The API uses Java 21, Spring Boot 4.1.2, Spring Security 7.1.2, and Spring Data JPA with Hibernate. MySQL is the application database and MySQL Connector/J 9.7.0 is the JDBC driver. Authentication uses BCrypt password hashing and signed JWTs via JJWT 0.13.0. The build uses Maven Wrapper with Maven 3.9.11. The [Maven manifest](pom.xml) declares Spring Boot’s dependency management and springdoc OpenAPI 3.2.0.
+The API uses Java 21, Spring Boot 4.1.2, Spring Security 7.1.2, and Spring Data JPA with Hibernate. MySQL is the application database and MySQL Connector/J 9.7.0 is the JDBC driver. Authentication uses BCrypt password hashing and signed JWTs via JJWT 0.13.0. New passwords require 15 Unicode code points and allow at most 72 UTF-8 bytes. Existing login credentials remain valid. Login and registration use separate account limits and return HTTP 429 with Retry-After when throttled. The build uses Maven Wrapper with Maven 3.9.11. The [Maven manifest](pom.xml) declares Spring Boot’s dependency management and springdoc OpenAPI 3.2.0.
 
 ## Authentication and authorization
 
@@ -44,7 +44,7 @@ A missing or invalid bearer token yields HTTP `401` on protected routes. An auth
 | Consultations | `GET /api/consultations`, `POST /api/consultations`, `GET /api/consultations/{id}`, `PUT /api/consultations/{id}`, `DELETE /api/consultations/{id}` |
 | Nutrition entries | `GET /api/nutrition-entries`, `POST /api/nutrition-entries`, `GET /api/nutrition-entries/{id}`, `PUT /api/nutrition-entries/{id}`, `DELETE /api/nutrition-entries/{id}` |
 | Diagnostics | `GET /api/db-check` requires `ADMIN` and is available outside the `prod` profile. |
-| Health on the deployed branch | `GET /healthz` and `GET /health` are public liveness checks at `7380bcd`. They return HTTP `200` without querying MySQL. |
+| Candidate health routes | Public GET /health and /healthz report liveness without querying MySQL. GET /readyz returns 200 when MySQL is reachable and 503 when it is unavailable. |
 
 Paginated collections accept Spring Data’s `page`, `size`, and `sort` parameters. Add `?search=<name>` to search coaches by name, or `?athleteId=<id>` to filter nutrition entries within the caller’s scope. Swagger UI is available locally at `http://localhost:8080/swagger-ui/index.html`. Swagger UI and OpenAPI are disabled under `prod`.
 
@@ -84,18 +84,18 @@ On macOS or Linux, use `sh ./mvnw verify`. The suite covers service operations, 
 
 The [Dockerfile](Dockerfile) runs Maven verification in a Java 21 build stage and launches the JAR as a non-root user with the `prod` profile. Render supplies `PORT`. Set the exact frontend HTTPS origin in `CORS_ALLOWED_ORIGINS` and keep database credentials and the JWT signing key in the backend service configuration.
 
-The production TLS settings are branch-specific:
+The candidate and historical deployment revision have different TLS settings.
 
 | Revision | JDBC and TLS configuration |
 | --- | --- |
 | `master` at `58443be` | Set `SPRING_DATASOURCE_URL` to `jdbc:mysql://<HOST>:<PORT>/<SCHEMA>`. The profile uses `VERIFY_IDENTITY`. The MySQL server certificate must chain to a trusted CA and identify `<HOST>`. See the [master deployment runbook](deploy/README.md). |
-| Render deployment at `7380bcd` | The deployment branch builds the JDBC URL from `MYSQL_HOST`, `MYSQL_PORT`, and `MYSQL_DATABASE`. It uses `VERIFY_CA` with a dedicated PKCS#12 truststore supplied through `MYSQL_TLS_TRUST_STORE_BASE64` and `MYSQL_TLS_TRUST_STORE_PASSWORD`. Use `/healthz` for the HTTP liveness probe. See the [deployed revision’s runbook](https://github.com/eman-java-dev/OlympicNutritionTracker-Backend/blob/7380bcde0eae979d5ad2bc1cce1e5d9cd3aeaa34/deploy/README.md). |
+| Historical deployment revision `7380bcd` | The deployment branch builds the JDBC URL from `MYSQL_HOST`, `MYSQL_PORT`, and `MYSQL_DATABASE`. It uses `VERIFY_CA` with a dedicated PKCS#12 truststore supplied through `MYSQL_TLS_TRUST_STORE_BASE64` and `MYSQL_TLS_TRUST_STORE_PASSWORD`. Use `/healthz` for the HTTP liveness probe. See the [deployed revision’s runbook](https://github.com/eman-java-dev/OlympicNutritionTracker-Backend/blob/7380bcde0eae979d5ad2bc1cce1e5d9cd3aeaa34/deploy/README.md). |
 
 Railway’s TCP proxy forwards the MySQL connection. The deployment branch verifies the server’s certificate chain without verifying the proxy hostname. Moving to `VERIFY_IDENTITY` requires a trusted MySQL certificate that covers the hostname used in the JDBC URL. [Connector/J TLS modes](https://dev.mysql.com/doc/connector-j/en/connector-j-connp-props-security.html)
 
 ## Current limits
 
-Account provisioning and profile linking require an operator. The API has no refresh-token, password-reset, or email-verification flow. MySQL integration testing, browser end-to-end coverage, and hostname verification for the deployed MySQL connection remain separate follow-up work.
+Account provisioning and profile linking require an operator. The API has no refresh-token, password-reset, or email-verification flow. Disposable MySQL and browser workflows are available. Production hostname verification and deployed revisions still require operator evidence.
 
 ## Hardening checks
 
@@ -103,3 +103,4 @@ Account provisioning and profile linking require an operator. The API has no ref
 - Run `./mvnw verify` with Java 21 for the H2-based service and API regression suite.
 - Use the [release operations runbook](deploy/release-operations.md) for the isolated MySQL check, deployment differences, credential containment and recovery gates.
 - Anonymous GET `/health` and `/healthz` provide liveness. `/readyz` checks database connectivity and returns an empty body. The production health path must be verified in Render.
+- See [the CI security notes](deploy/ci-security.md) for traced Java compilation, resolved dependency coverage, offline OSV and secret scan ranges.
