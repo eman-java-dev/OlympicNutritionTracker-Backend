@@ -13,6 +13,7 @@ import com.eman.tracker.olympicnutritiontracker.repository.ConsultationRepositor
 import com.eman.tracker.olympicnutritiontracker.repository.NutritionEntryRepository;
 import com.eman.tracker.olympicnutritiontracker.repository.UserRepository;
 import com.eman.tracker.olympicnutritiontracker.service.CustomUserDetailsService;
+import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -21,13 +22,20 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.web.context.WebApplicationContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -37,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ApiSecurityTest {
 
     @Autowired MockMvc mvc;
+    @Autowired WebApplicationContext webContext;
     @Autowired UserRepository users;
     @Autowired CoachRepository coaches;
     @Autowired AthleteRepository athletes;
@@ -47,6 +56,142 @@ class ApiSecurityTest {
     @Autowired JwtService jwt;
 
     private final String testPassword = UUID.randomUUID().toString();
+
+    @Test
+    void passwordPolicyAppliesOnlyToNewAccountsAndCountsUnicodeCodePoints() throws Exception {
+        String legacy = "legacy";
+        users.saveAndFlush(User.builder().username("old-policy").password(encoder.encode(legacy))
+                .role(Role.ATHLETE).build());
+        authRequest("login", "old-policy", legacy).andExpect(status().isOk());
+
+        String emoji = new String(Character.toChars(0x1f3c5));
+        authRequest("register", "short-policy", emoji.repeat(14)).andExpect(status().isBadRequest());
+        authRequest("register", "too-many-bytes", emoji.repeat(18) + "x").andExpect(status().isBadRequest());
+        authRequest("register", "exact-minimum", emoji.repeat(15)).andExpect(status().isOk());
+        authRequest("register", "exact-byte-limit", emoji.repeat(18)).andExpect(status().isOk());
+        assertThat(users.existsByUsername("short-policy")).isFalse();
+        assertThat(users.existsByUsername("too-many-bytes")).isFalse();
+    }
+
+    @Test
+    void forwardedHeadersCannotResetAccountBudget() throws Exception {
+        for (int attempt = 0; attempt < 11; attempt++) {
+            var result = mvc.perform(post("/api/auth/login")
+                    .header("Forwarded", "for=192.0.2." + attempt)
+                    .header("X-Forwarded-For", "198.51.100." + attempt + ", 203.0.113.1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                            {"username":"throttle-check","password":"incorrect"}
+                            """));
+            if (attempt < 10) {
+                result.andExpect(status().isUnauthorized());
+            } else {
+                result.andExpect(status().isTooManyRequests())
+                        .andExpect(header().exists(HttpHeaders.RETRY_AFTER));
+            }
+        }
+    }
+
+    @Test
+    void healthAliasesAreAvailableWithoutAuthentication() throws Exception {
+        mvc.perform(get("/health")).andExpect(status().isOk()).andExpect(content().string(""));
+        mvc.perform(get("/healthz")).andExpect(status().isOk()).andExpect(content().string(""));
+        mvc.perform(post("/healthz")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void invalidWritesLeaveDataUnchangedAndOptionalNutritionFieldsRemainOptional() throws Exception {
+        account("validation-admin", Role.ADMIN, null, null);
+        String token = bearer("validation-admin");
+        long athleteCount = athletes.count();
+        long entryCount = entries.count();
+        mvc.perform(post("/api/athletes").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":" ", "age":0, "gender":"12345678901","height":"Infinity"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.name").exists())
+                .andExpect(jsonPath("$.fields.age").exists())
+                .andExpect(jsonPath("$.fields.gender").exists())
+                .andExpect(jsonPath("$.fields.height").exists());
+        assertThat(athletes.count()).isEqualTo(athleteCount);
+        mvc.perform(post("/api/nutrition-entries").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"fat\":-1}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.date").exists())
+                .andExpect(jsonPath("$.fields.athleteId").exists())
+                .andExpect(jsonPath("$.fields.fat").exists());
+        mvc.perform(post("/api/nutrition-entries").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"date":"+10000-01-01","athleteId":1,"calories":0}
+                                """))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.date").exists());
+        mvc.perform(post("/api/nutrition-entries").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"date":"2020-01-01","athleteId":1,"calories":1.5}
+                                """))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value("Invalid request body"));
+        mvc.perform(post("/api/consultations").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"scheduledAt":"0999-01-01T12:00:00","athleteId":1,"coachId":1,"message":"Fixture"}
+                                """))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.scheduledAt").exists());
+        assertThat(entries.count()).isEqualTo(entryCount);
+
+        Athlete athlete = new Athlete();
+        athlete.setName("Optional measures");
+        athletes.saveAndFlush(athlete);
+        mvc.perform(post("/api/nutrition-entries").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"date":"2020-01-01","athleteId":%d,"protein":0,"notes":null}
+                                """.formatted(athlete.getId())))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.protein").value(0));
+        assertThat(entries.count()).isEqualTo(entryCount + 1);
+    }
+
+    @Test
+    void currentDatabaseRoleAndCoachDirectoryApplyToIssuedTokens() throws Exception {
+        User account = account("changed-role", Role.ADMIN, null, null);
+        String token = bearer(account.getUsername());
+        account.setRole(Role.ATHLETE);
+        users.saveAndFlush(account);
+
+        mvc.perform(get("/api/coaches")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/coaches").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/athletes").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(post("/api/athletes").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Test athlete\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void readinessAndCorsExposeOnlyTheirIntendedPublicContract() throws Exception {
+        mvc.perform(get("/readyz")).andExpect(status().isOk()).andExpect(content().string(""));
+        mvc.perform(get("/health").header(HttpHeaders.ORIGIN, "http://localhost:4200"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.RETRY_AFTER));
+        mvc.perform(options("/api/athletes").header(HttpHeaders.ORIGIN, "https://example.invalid")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET"))
+                .andExpect(status().isForbidden())
+                .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
+
+
+    private org.springframework.test.web.servlet.ResultActions authRequest(String action, String username,
+                                                                          String password) throws Exception {
+        return mvc.perform(post("/api/auth/" + action).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"username":"%s","password":"%s"}
+                        """.formatted(username, password)));
+    }
+
 
     @Test
     void registrationAlwaysStoresAnAthleteAndKeepsTheResponseContract() throws Exception {
@@ -201,6 +346,58 @@ class ApiSecurityTest {
         mvc.perform(get("/api/db-check").header(HttpHeaders.AUTHORIZATION, adminBearer))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void coachWriteWaitingBeforeRecordAccessSeesCommittedReassignment() throws Exception {
+        Coach original = coach("Transition original");
+        Coach replacement = coach("Transition replacement");
+        Athlete athlete = athlete("Transition athlete", original);
+        NutritionEntry entry = entry(athlete);
+        User oldCoach = account("transition-coach", Role.COACH, null, original.getId());
+        User admin = account("transition-admin", Role.ADMIN, null, null);
+        var waiting = new CountDownLatch(1);
+        var proceed = new CountDownLatch(1);
+        MockMvc pausedMvc = MockMvcBuilders.webAppContextSetup(webContext)
+                .apply(springSecurity())
+                .addFilters((request, response, chain) -> {
+                    waiting.countDown();
+                    try {
+                        if (!proceed.await(10, TimeUnit.SECONDS)) {
+                            throw new ServletException("Timed out waiting for reassignment");
+                        }
+                    } catch (InterruptedException error) {
+                        Thread.currentThread().interrupt();
+                        throw new ServletException(error);
+                    }
+                    chain.doFilter(request, response);
+                }).build();
+
+        try (var pool = Executors.newSingleThreadExecutor()) {
+            String oldToken = bearer(oldCoach.getUsername());
+            var write = pool.submit(() -> pausedMvc.perform(put("/api/nutrition-entries/{id}", entry.getId())
+                    .header(HttpHeaders.AUTHORIZATION, oldToken)
+                    .contentType(MediaType.APPLICATION_JSON).content(entryRequest(athlete)))
+                    .andReturn().getResponse().getStatus());
+            try {
+                assertThat(waiting.await(10, TimeUnit.SECONDS)).isTrue();
+                mvc.perform(put("/api/athletes/{athleteId}/assign-coach/{coachId}",
+                                athlete.getId(), replacement.getId())
+                                .header(HttpHeaders.AUTHORIZATION, bearer(admin.getUsername())))
+                        .andExpect(status().isOk());
+            } finally {
+                proceed.countDown();
+            }
+            assertThat(write.get(10, TimeUnit.SECONDS)).isEqualTo(404);
+            assertThat(entries.findById(entry.getId()).orElseThrow().getCalories()).isNull();
+        } finally {
+            users.deleteAllById(java.util.List.of(oldCoach.getId(), admin.getId()));
+            entries.deleteById(entry.getId());
+            athletes.deleteById(athlete.getId());
+            coaches.deleteAllById(java.util.List.of(original.getId(), replacement.getId()));
+        }
+    }
+
 
     @Test
     void corsPreflightAllowsConfiguredAngularOrigin() throws Exception {

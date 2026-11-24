@@ -37,6 +37,13 @@ public class AuthenticationService {
         if (exceedsBcryptLimit(request.getPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must be at most 72 UTF-8 bytes");
         }
+        String password = request.getPassword();
+        if (!StandardCharsets.UTF_8.newEncoder().canEncode(password)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must be valid Unicode");
+        }
+        if (password.codePointCount(0, password.length()) < 15) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must contain at least 15 characters");
+        }
         if (userRepository.existsByUsername(request.getUsername())) {
             throw duplicateUsername();
         }
